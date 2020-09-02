@@ -53,6 +53,7 @@ type ReplyKeyboardMarkup struct {
 
 type Button struct {
 	Chat_id      int                 `json:"chat_id"`
+	Text         string              `json:"text"`
 	Reply_markup ReplyKeyboardMarkup `json:"reply_markup"`
 }
 
