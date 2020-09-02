@@ -1,17 +1,33 @@
 package main
 
+const (
+	ToNone       = iota
+	ToRepeatNew  = iota
+	ToRepeatKnow = iota
+	ToKnow       = iota
+	ToNotKnow    = iota
+	ToListWord   = iota
+	ToMakeGroup  = iota
+)
+
+type Request struct {
+	Text    string
+	Name    string
+	Chat_id int
+}
+
 type Chat struct {
 	Id int
 }
 
-type Message struct {
-	Chat Chat
-	User User `json:"forward_from"`
-	Text string
+type User struct {
+	Username string `json:"username"`
 }
 
-type User struct {
-	Username string `json:"first_name"`
+type Message struct {
+	Chat Chat
+	User User `json:"from"`
+	Text string
 }
 
 type Update struct {
@@ -24,13 +40,23 @@ type RestResponse struct {
 	Result []Update `json:"result"`
 }
 
+type KeyboardButton struct {
+	Text string `json:"text"`
+}
+
+type ReplyKeyboardMarkup struct {
+	Keyboard          [][]KeyboardButton `json:"keyboard"`
+	Resize_keyboard   bool               `json:"resize_keyboard"`
+	One_time_keyboard bool               `json:"one_time_keyboard"`
+	Selective         bool               `json:"selective"`
+}
+
+type Button struct {
+	Chat_id      int                 `json:"chat_id"`
+	Reply_markup ReplyKeyboardMarkup `json:"reply_markup"`
+}
+
 type BotMessage struct {
 	Chat_id int    `json:"chat_id"`
 	Text    string `json:"text"`
-}
-
-type Mes struct {
-	Name string
-	Body string
-	Time int64
 }
