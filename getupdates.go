@@ -45,9 +45,64 @@ func getMessage(url string, offset *int) (RestResponse, error) {
 	return restResponse, nil
 }
 
+func CommandStart(r Request) error {
+	err := sendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CommandListKnow(r Request) error {
+	err := listKnow(r.Name, r.Chat_id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CommandListNew(r Request) error {
+	err := listNew(r.Name, r.Chat_id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CommandRepeatKnow(r Request) error {
+	// if err != nil {
+	// 	return err
+	// }
+	return nil
+}
+
+func CommandRepeatNew(r Request) error {
+	// if err != nil {
+	// 	return err
+	// }
+	return nil
+}
+
+func CommandWordKnow(r Request) error {
+	err := sendMessage("Enter Word Please", r.Chat_id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CommandWordNew(r Request) error {
+	err := sendMessage("Enter Word Please", r.Chat_id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func getUpdate(url string, offset *int,
 	stmt_list *map[string]sql.Rows,
-	actions_list *map[string]int) error {
+	actions_list *map[string]int,
+	functions map[string]func(Request) error) error {
 	rest, err := getMessage(url, offset)
 
 	if err != nil || len(rest.Result) == 0 {
@@ -55,7 +110,6 @@ func getUpdate(url string, offset *int,
 	}
 
 	var r Request
-
 	for _, update := range rest.Result {
 		r.Text = update.Message.Text
 		r.Name = update.Message.User.Username
@@ -69,64 +123,33 @@ func getUpdate(url string, offset *int,
 			return err
 		}
 
-		if CheckActions(r, stmt_list, actions_list) {
-			return nil
-		}
-		if r.Text == "/start" {
-			err = sendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
-			if err != nil {
-				return err
-			}
-		} else if r.Text == "repeatNew" {
-			if err != nil {
-				return err
-			}
-		} else if r.Text == "repeatKnow" {
-			if err != nil {
-				return err
-			}
-		} else if r.Text == "listNew" {
-			err = listNew(r.Name, r.Chat_id)
-			if err != nil {
-				return err
-			}
-		} else if r.Text == "listKnow" {
-			err = listKnow(r.Name, r.Chat_id)
-			if err != nil {
-				return err
-			}
-		} else if r.Text == "Know" {
-			err = sendMessage("Enter Word Please", r.Chat_id)
-			if err != nil {
-				return err
-			}
-		} else if r.Text == "NotKnow" {
-			err = sendMessage("Enter Word Please", r.Chat_id)
-			if err != nil {
-				return err
-			}
+		// if CheckActions(r, stmt_list, actions_list) {
+		// 	return nil
+		// }
+
+		function, ok := functions[r.Text]
+
+		if ok {
+			return function(r)
 		} else {
 			words := strings.Split(update.Message.Text, "-")
 			if len(words) != 2 {
-				fmt.Print("\033[1;34mTo send Word\033[0m\t\n")
-				err = sendWord(update.Message.Text, r.Name, r.Chat_id)
+				err = TranslateWord(r)
 				if err != nil {
 					return err
 				}
 			} else {
 				err = insertWord(r.Name, words)
 				if err != nil {
-					sendMessage("word did not write", r.Chat_id)
+					sendMessage("Again", r.Chat_id)
 					if err != nil {
 						return err
 					}
-					fmt.Print("\033[1;34mWord did not Write\033[0m\t\n")
 				} else {
-					sendMessage("word wrote", r.Chat_id)
+					sendMessage("Ok", r.Chat_id)
 					if err != nil {
 						return err
 					}
-					fmt.Print("\033[1;34mWord Wrote\033[0m\t\n")
 				}
 			}
 		}
@@ -139,50 +162,52 @@ func CheckUser(name string, chat_id int) error {
 
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
-		fmt.Print("\n\033[1;34mcheckUser\033[0m\t")
+		fmt.Print("\033[1;34mCheck User\033[0m\n")
 		return err
 	}
 	rows, err := database.Query("select name from users WHERE name = ? and chat_id = ?", name, chat_id)
 	if err != nil {
-		fmt.Print("\n\033[1;34mcheckUser\033[0m\t")
+		fmt.Print("\033[1;34mCheck User\033[0m\n")
 		return err
 	}
 
 	if rows.Next() {
 		err = rows.Scan(&n)
-		if err != nil {
-			fmt.Print("\n\033[1;34mcheckUser\033[0m\t")
-			return err
-		}
 		err = rows.Close()
 		if err != nil {
-			fmt.Print("\n\033[1;34mcheckUser\033[0m\t")
+			fmt.Print("\033[1;34mCheck User\033[0m\n")
 			return err
 		}
-		if n == "" {
+	} else {
+		err = AddUser(name, chat_id)
+		if err != nil {
+			return err
+		} else {
 			setButton(chat_id)
+			return nil
 		}
 	}
+	fmt.Print("\033[1;34mCheck User Ok\033[0m\n")
 	return nil
 }
 
-func CheckActions(r Request,
-	stmt_list *map[string]sql.Rows,
-	actions_list *map[string]int) bool {
-
-	if (*actions_list)[r.Name] == ToNone {
-		return false
+func AddUser(name string, chat_id int) error {
+	database, err := sql.Open("sqlite3", "./words.db")
+	if err != nil {
+		fmt.Print("\033[1;34mAdd User\033[0m\n")
+		return err
 	}
-	if (*actions_list)[r.Name] == ToKnow {
-
-	} else if (*actions_list)[r.Name] == ToNotKnow {
-
-	} else if (*actions_list)[r.Name] == ToRepeatNew {
-
-	} else if (*actions_list)[r.Name] == ToRepeatKnow {
-
+	statement, err := database.Prepare("insert into users (name, chat_id)values(?, ?)")
+	if err != nil {
+		fmt.Print("\033[1;34mAdd User\033[0m\n")
+		return err
 	}
-	return true
+	_, err = statement.Exec(name, chat_id)
+	if err != nil {
+		fmt.Print("\033[1;34mAdd User\033[0m\n")
+		return err
+	}
+	return nil
 }
 
 func Know() {

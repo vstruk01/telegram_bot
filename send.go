@@ -11,38 +11,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func sendWord(text string, name string, chat_id int) error {
+func TranslateWord(r Request) error {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
-		fmt.Print("\033[1;34mError sendWord 1\033[0m\n")
+		fmt.Print("\033[1;34mError Translate Word 1\033[0m\n")
 		return err
 	}
-	rows, err := database.Query("select translate from words where name = ? and word = ?", name, text)
+	rows, err := database.Query("select word, translate from words where name = ? and word = ?", r.Name, r.Text)
 	if err != nil {
-		fmt.Print("\033[1;34mError sendWord 2\033[0m\n")
+		fmt.Print("\033[1;34mError Translate Word 2\033[0m\n")
 		return err
 	}
-	var translate string
-
-	rows.Next()
-	err = rows.Scan(&translate)
+	err = sendWords(rows, r.Chat_id)
 	if err != nil {
-		err = sendMessage("Hmmmmm I think that you wrong", chat_id)
-		if err != nil {
-			return err
-		}
-	} else {
-		err = sendMessage(translate, chat_id)
-		if err != nil {
-			return err
-		}
-	}
-	err = rows.Close()
-	if err != nil {
-		fmt.Print("\033[1;34mError sendWord 3\033[0m\n")
 		return err
 	}
-	fmt.Print("\033[1;34msendWord Ok\033[0m\n")
+	fmt.Print("\033[1;34mTranslate Word Ok\033[0m\n")
 	return nil
 }
 
@@ -51,16 +35,17 @@ func sendWords(rows *sql.Rows, chat_id int) error {
 
 	var word, translate string
 	for rows.Next() {
+		fmt.Println("i am here")
 		rows.Scan(&word, &translate)
 		translates := strings.Split(translate, ",")
-		message += word + " ->   "
+		message += word + "  ->  "
 		for i := 0; i < len(translates); i++ {
 			message += translates[i] + "   "
 		}
 		message += "\n"
 	}
 	if message == "" {
-		message += "there are not words"
+		message += "Hmmmmm I think that you wrong"
 	}
 	sendMessage(message, chat_id)
 	fmt.Print("\033[1;34msendWords Ok\033[0m\n")

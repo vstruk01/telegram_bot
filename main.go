@@ -13,6 +13,16 @@ func main() {
 	if err != nil {
 		return
 	}
+
+	functions := make(map[string]func(Request) error)
+	functions["/start"] = CommandStart
+	functions["RepeatKnow"] = CommandStart
+	functions["ListKnow"] = CommandStart
+	functions["WordKnow"] = CommandStart
+	functions["WordNew"] = CommandStart
+	functions["ListNew"] = CommandStart
+	functions["RepeatNew"] = CommandStart
+
 	stmt_list := make(map[string]sql.Rows)
 	actions_list := make(map[string]int)
 
@@ -20,7 +30,7 @@ func main() {
 	offset := 0
 
 	for {
-		err = getUpdate(url, &offset, &stmt_list, &actions_list)
+		err = getUpdate(url, &offset, &stmt_list, &actions_list, functions)
 		if err != nil {
 			fmt.Println("\033[1;32mError = ", err.Error(), "\033[0m")
 		}
