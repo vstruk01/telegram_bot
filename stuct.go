@@ -1,15 +1,5 @@
 package main
 
-const (
-	ToNone       = iota
-	ToRepeatNew  = iota
-	ToRepeatKnow = iota
-	ToKnow       = iota
-	ToNotKnow    = iota
-	ToListWord   = iota
-	ToMakeGroup  = iota
-)
-
 type Request struct {
 	Text    string
 	Name    string

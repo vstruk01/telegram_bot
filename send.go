@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func TranslateWord(r Request) error {
@@ -22,7 +20,7 @@ func TranslateWord(r Request) error {
 		fmt.Print("\033[1;34mError Translate Word 2\033[0m\n")
 		return err
 	}
-	err = sendWords(rows, r.Chat_id)
+	err = SendWords(rows, r.Chat_id)
 	if err != nil {
 		return err
 	}
@@ -30,12 +28,11 @@ func TranslateWord(r Request) error {
 	return nil
 }
 
-func sendWords(rows *sql.Rows, chat_id int) error {
+func SendWords(rows *sql.Rows, chat_id int) error {
 	var message string
 
 	var word, translate string
 	for rows.Next() {
-		fmt.Println("i am here")
 		rows.Scan(&word, &translate)
 		translates := strings.Split(translate, ",")
 		message += word + "  ->  "
@@ -47,7 +44,7 @@ func sendWords(rows *sql.Rows, chat_id int) error {
 	if message == "" {
 		message += "Hmmmmm I think that you wrong"
 	}
-	sendMessage(message, chat_id)
+	SendMessage(message, chat_id)
 	fmt.Print("\033[1;34msendWords Ok\033[0m\n")
 	return nil
 }
@@ -76,33 +73,33 @@ func setButton(chat_id int) error {
 
 	buf, err := json.Marshal(m)
 	if err != nil {
-		fmt.Print("\033[1;34mset Button\033[0m\n")
+		fmt.Print("\033[1;34mSet Button\033[0m\n")
 		return err
 	}
 	_, err = http.Post("https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/sendMessage", "application/json", bytes.NewBuffer(buf))
 	if err != nil {
-		fmt.Print("\033[1;34mset Button\033[0m\n")
+		fmt.Print("\033[1;34mSet Button\033[0m\n")
 		return err
 	}
-	fmt.Print("\033[1;34msetButton Ok\033[0m\n")
+	fmt.Print("\033[1;34mSet Button Ok\033[0m\n")
 	return nil
 }
 
-func sendMessage(message string, chat_id int) error {
+func SendMessage(message string, chat_id int) error {
 	var m BotMessage
 	m.Chat_id = chat_id
 	m.Text = message
 
 	buf, err := json.Marshal(m)
 	if err != nil {
-		fmt.Print("\033[1;34msendMessage\033[0m\n")
+		fmt.Print("\033[1;34mSend Message\033[0m\n")
 		return err
 	}
 	_, err = http.Post("https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/sendMessage", "application/json", bytes.NewBuffer(buf))
 	if err != nil {
-		fmt.Print("\033[1;34msendMessage\033[0m\n")
+		fmt.Print("\033[1;34mSend Message\033[0m\n")
 		return err
 	}
-	fmt.Print("\033[1;34msendMessage Ok\033[0m\n")
+	fmt.Print("\033[1;34mSend Message Ok\033[0m\n")
 	return nil
 }

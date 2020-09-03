@@ -4,8 +4,6 @@ import (
 	"database/sql"
 
 	"fmt"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -30,7 +28,7 @@ func main() {
 	offset := 0
 
 	for {
-		err = getUpdate(url, &offset, &stmt_list, &actions_list, functions)
+		err = GetUpdate(url, &offset, &stmt_list, &actions_list, functions)
 		if err != nil {
 			fmt.Println("\033[1;32mError = ", err.Error(), "\033[0m")
 		}

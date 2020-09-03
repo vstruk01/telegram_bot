@@ -4,6 +4,9 @@ BINARY_DIR=bin/
 PROJECT_NAME=t_e_bot
 MAIN=main
 
+GOPATH = $(shell pwd)
+
+
 all: compile
 
 compile: | $(BINARY_DIR)

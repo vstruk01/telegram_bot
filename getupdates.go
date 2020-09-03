@@ -9,11 +9,9 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
-func getMessage(url string, offset *int) (RestResponse, error) {
+func GetMessage(url string, offset *int) (RestResponse, error) {
 	resp, err := http.Get(url + "getUpdates" + "?offset=" + strconv.Itoa(*offset))
 
 	if err != nil {
@@ -46,23 +44,7 @@ func getMessage(url string, offset *int) (RestResponse, error) {
 }
 
 func CommandStart(r Request) error {
-	err := sendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func CommandListKnow(r Request) error {
-	err := listKnow(r.Name, r.Chat_id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func CommandListNew(r Request) error {
-	err := listNew(r.Name, r.Chat_id)
+	err := SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
 	if err != nil {
 		return err
 	}
@@ -84,7 +66,7 @@ func CommandRepeatNew(r Request) error {
 }
 
 func CommandWordKnow(r Request) error {
-	err := sendMessage("Enter Word Please", r.Chat_id)
+	err := SendMessage("Enter Word Please", r.Chat_id)
 	if err != nil {
 		return err
 	}
@@ -92,18 +74,18 @@ func CommandWordKnow(r Request) error {
 }
 
 func CommandWordNew(r Request) error {
-	err := sendMessage("Enter Word Please", r.Chat_id)
+	err := SendMessage("Enter Word Please", r.Chat_id)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func getUpdate(url string, offset *int,
+func GetUpdate(url string, offset *int,
 	stmt_list *map[string]sql.Rows,
 	actions_list *map[string]int,
 	functions map[string]func(Request) error) error {
-	rest, err := getMessage(url, offset)
+	rest, err := GetMessage(url, offset)
 
 	if err != nil || len(rest.Result) == 0 {
 		return err
@@ -123,10 +105,6 @@ func getUpdate(url string, offset *int,
 			return err
 		}
 
-		// if CheckActions(r, stmt_list, actions_list) {
-		// 	return nil
-		// }
-
 		function, ok := functions[r.Text]
 
 		if ok {
@@ -139,14 +117,14 @@ func getUpdate(url string, offset *int,
 					return err
 				}
 			} else {
-				err = insertWord(r.Name, words)
+				err = InsertWord(r.Name, words)
 				if err != nil {
-					sendMessage("Again", r.Chat_id)
+					SendMessage("Again", r.Chat_id)
 					if err != nil {
 						return err
 					}
 				} else {
-					sendMessage("Ok", r.Chat_id)
+					SendMessage("Ok", r.Chat_id)
 					if err != nil {
 						return err
 					}

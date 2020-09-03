@@ -3,10 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 )
 
-func listNew(name string, chat_id int) error {
+func CommandListNew(name string, chat_id int) error {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
 		fmt.Print("\033[1;34mlistNew\033[0m\n")
@@ -17,12 +16,12 @@ func listNew(name string, chat_id int) error {
 		fmt.Print("\033[1;34mlistNew\033[0m\n")
 		return err
 	}
-	sendWords(rows, chat_id)
+	SendWords(rows, chat_id)
 	fmt.Print("\033[1;34mlistNew Ok\033[0m\n")
 	return nil
 }
 
-func listKnow(name string, chat_id int) error {
+func CommandListKnow(name string, chat_id int) error {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
 		fmt.Print("\033[1;34mlistKnow\033[0m\n")
@@ -33,12 +32,12 @@ func listKnow(name string, chat_id int) error {
 		fmt.Print("\033[1;34mlistKnow\033[0m\n")
 		return err
 	}
-	sendWords(rows, chat_id)
+	SendWords(rows, chat_id)
 	fmt.Print("\033[1;34mlistKnow Ok\033[0m\n")
 	return nil
 }
 
-func insertWord(name string, words []string) error {
+func InsertWord(name string, words []string) error {
 	var old_words string
 
 	database, err := sql.Open("sqlite3", "./words.db")
