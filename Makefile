@@ -4,13 +4,10 @@ BINARY_DIR=bin/
 PROJECT_NAME=t_e_bot
 MAIN=main
 
-GOPATH = $(shell pwd)
-
-
 all: compile
 
 compile: | $(BINARY_DIR)
-	@go build -o $(BINARY_DIR)$(PROJECT_NAME) main.go stuct.go getupdates.go command.go send.go
+	@go build -o $(BINARY_DIR)$(PROJECT_NAME) main.go struct.go getupdates.go command.go send.go
 
 $(BINARY_DIR):
 	@mkdir -p bin

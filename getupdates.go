@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func GetMessage(url string, offset *int) (RestResponse, error) {
@@ -43,61 +45,50 @@ func GetMessage(url string, offset *int) (RestResponse, error) {
 	return restResponse, nil
 }
 
-func CommandStart(r Request) error {
+func CommandStart(r Request) {
 	err := SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
 	if err != nil {
-		return err
+		r.ErrC <- err
 	}
-	return nil
+	r.ErrC <- nil
 }
 
-func CommandRepeatKnow(r Request) error {
+func CommandRepeatKnow(r Request) {
+	for {
+
+	}
+}
+
+func CommandRepeatNew(r Request) {
 	// if err != nil {
 	// 	return err
 	// }
-	return nil
 }
 
-func CommandRepeatNew(r Request) error {
-	// if err != nil {
-	// 	return err
-	// }
-	return nil
-}
-
-func CommandWordKnow(r Request) error {
+func CommandWordNew(r Request) {
 	err := SendMessage("Enter Word Please", r.Chat_id)
+
 	if err != nil {
-		return err
+		r.ErrC <- err
 	}
-	return nil
+	r.ErrC <- nil
 }
 
-func CommandWordNew(r Request) error {
-	err := SendMessage("Enter Word Please", r.Chat_id)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func GetUpdate(url string, offset *int,
-	stmt_list *map[string]sql.Rows,
-	actions_list *map[string]int,
-	functions map[string]func(Request) error) error {
-	rest, err := GetMessage(url, offset)
+func GetUpdate(master *Master) error {
+	rest, err := GetMessage(master.url, &master.offset)
 
 	if err != nil || len(rest.Result) == 0 {
 		return err
 	}
 
 	var r Request
+	r.OpenDb = master
 	for _, update := range rest.Result {
 		r.Text = update.Message.Text
 		r.Name = update.Message.User.Username
 		r.Chat_id = update.Message.Chat.Id
 		log.Print("\n\033[1;34mName:\033[0m\t", r.Name,
-			"\n\033[1;34mid:\033[0m\t", r.Chat_id,
+			"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
 			"\n\033[1;34mWrote:\033[0m\t", r.Text, "\n\n")
 
 		err = CheckUser(r.Name, r.Chat_id)
@@ -105,10 +96,24 @@ func GetUpdate(url string, offset *int,
 			return err
 		}
 
-		function, ok := functions[r.Text]
+		function, ok := master.Commands[r.Text]
 
 		if ok {
-			return function(r)
+			r.C, ok = master.Rutines[r.Chat_id]
+			if !ok {
+				master.Rutines[r.Chat_id] = make(chan string, 1)
+				r.C = master.Rutines[r.Chat_id]
+				go function(r)
+			} else {
+				r.C <- r.Text
+			}
+			err, ok = <-master.errc
+			if !ok {
+				fmt.Println("Error ok")
+				delete(master.Rutines, r.Chat_id)
+				return nil
+			}
+			return err
 		} else {
 			words := strings.Split(update.Message.Text, "-")
 			if len(words) != 2 {
