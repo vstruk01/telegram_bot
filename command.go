@@ -32,6 +32,8 @@ func CommandWordKnow(r Request, c Channels) {
 		c.Err <- err
 		return
 	}
+	rows.Close()
+
 	translates = strings.Split(translate, ",")
 	SendMessage("Enter translate of this word", r.Chat_id)
 	fmt.Print("\033[1;34mWait Answer\033[0m\n")
