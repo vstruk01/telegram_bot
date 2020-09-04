@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -21,11 +22,10 @@ func main() {
 	}
 }
 
-
 func InitAll() (*Master, error) {
 	master := new(Master)
 
-	master.Commands = make(map[string]func(Request))
+	master.Commands = make(map[string]func(Request, Channels))
 	master.Commands["/start"] = CommandStart
 	master.Commands["RepeatKnow"] = CommandRepeatKnow
 	master.Commands["ListKnow"] = CommandListKnow
@@ -33,10 +33,9 @@ func InitAll() (*Master, error) {
 	master.Commands["WordNew"] = CommandWordNew
 	master.Commands["ListNew"] = CommandListNew
 	master.Commands["RepeatNew"] = CommandRepeatNew
-	master.Rutines = make(map[int]chan string)
+	master.Rutines = make(map[int]Channels)
 	master.url = "https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/"
 	master.offset = 0
-	master.errc = make(chan error, 1)
 	var err error
 	master.OpenDb, err = createDB()
 	if err != nil {

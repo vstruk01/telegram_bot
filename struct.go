@@ -4,21 +4,24 @@ import (
 	"database/sql"
 )
 
+type Channels struct {
+	C    chan string
+	Err  chan error
+	Done chan bool
+}
+
 type Request struct {
 	Text    string
 	Name    string
 	Chat_id int
-	C       chan string
-	ErrC    chan error
-	OpenDb   *sql.DB
+	OpenDb  *sql.DB
 }
 
 type Master struct {
-	Commands map[string]func(Request)
-	Rutines  map[int]chan string
+	Commands map[string]func(Request, Channels)
+	Rutines  map[int]Channels
 	url      string
 	offset   int
-	errc     chan error
 	OpenDb   *sql.DB
 }
 

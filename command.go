@@ -3,51 +3,93 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
-
-func CommandWordKnow(r Request) {
+func CommandWordKnow(r Request, c Channels) {
 	err := SendMessage("Enter Word Please", r.Chat_id)
-	word := <- r.C
+	var word, translate, answer string
+	var translates []string
 
-	
+	c.Done <- false
+	fmt.Print("\033[1;34mWait Word\033[0m\n")
+	word = <-c.C
+	fmt.Print("\033[1;34mGet Word Yes\033[0m\n")
+	rows, err := r.OpenDb.Query("select translate from words where word = ?", word)
 	if err != nil {
-		r.ErrC <- err
+		c.Err <- err
+		return
 	}
-	r.ErrC <- nil
+	if !rows.Next() {
+		SendMessage("Sorry I do not find this word", r.Chat_id)
+		c.Done <- true
+		return
+	}
+	err = rows.Scan(&translate)
+	if err != nil {
+		c.Err <- err
+		return
+	}
+	translates = strings.Split(translate, ",")
+	SendMessage("Enter translate of this word", r.Chat_id)
+	fmt.Print("\033[1;34mWait Answer\033[0m\n")
+	c.Done <- false
+	answer = <-c.C
+	fmt.Print("\033[1;34mGet Answer Yes\033[0m\n")
+	for _, translate = range translates {
+		if translate == answer {
+			fmt.Print("\033[1;34mNice\033[0m\n")
+			SendMessage("Ok I belive you", r.Chat_id)
+			_, err = r.OpenDb.Exec("update words set ok = 1 where name = ?1 and word = ?2", r.Name, word)
+			if err != nil {
+				c.Err <- err
+				return
+			}
+			c.Done <- true
+			return
+		}
+	}
+	fmt.Print("\033[1;34mNot Nice\033[0m\n")
+	SendMessage("You can not lie to me", r.Chat_id)
+	c.Done <- true
 }
 
-func CommandListNew(r Request) {
+func CommandListNew(r Request, c Channels) {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
 		fmt.Print("\033[1;34mlistNew\033[0m\n")
-		r.ErrC <- err
+		c.Err <- err
+		return
 	}
 	rows, err := database.Query("select word, translate from words where name = ? and ok = 0", r.Name)
 	if err != nil {
 		fmt.Print("\033[1;34mlistNew\033[0m\n")
-		r.ErrC <- err
+		c.Err <- err
+		return
 	}
 	SendWords(rows, r.Chat_id)
 	fmt.Print("\033[1;34mlistNew Ok\033[0m\n")
-	r.ErrC <- nil
+	c.Done <- true
 }
 
-func CommandListKnow(r Request) {
+func CommandListKnow(r Request, c Channels) {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
 		fmt.Print("\033[1;34mlistKnow\033[0m\n")
-		r.ErrC <- err
+		c.Err <- err
+		return
 	}
 	rows, err := database.Query("select word, translate from words where name = ? and ok > 0", r.Name)
 	if err != nil {
 		fmt.Print("\033[1;34mlistKnow\033[0m\n")
-		r.ErrC <- err
+		c.Err <- err
+		return
 	}
 	SendWords(rows, r.Chat_id)
 	fmt.Print("\033[1;34mlistKnow Ok\033[0m\n")
-	r.ErrC <- nil
+	c.Done <- true
 }
 
 func InsertWord(name string, words []string) error {
@@ -80,4 +122,14 @@ func InsertWord(name string, words []string) error {
 	}
 	fmt.Print("\033[1;34mInsert Word Ok\033[0m\n")
 	return nil
+}
+
+func CommandStart(r Request, c Channels) {
+	err := SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
+	if err != nil {
+		c.Err <- err
+		return
+	}
+	c.Done <- true
+	return
 }

@@ -45,35 +45,24 @@ func GetMessage(url string, offset *int) (RestResponse, error) {
 	return restResponse, nil
 }
 
-func CommandStart(r Request) {
-	err := SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
-	if err != nil {
-		r.ErrC <- err
-	}
-	r.ErrC <- nil
+func CommandRepeatKnow(r Request, c Channels) {
+	c.Done <- true
 }
 
-func CommandRepeatKnow(r Request) {
-	for {
-
-	}
+func CommandRepeatNew(r Request, c Channels) {
+	c.Done <- true
 }
 
-func CommandRepeatNew(r Request) {
-	// if err != nil {
-	// 	return err
-	// }
-}
-
-func CommandWordNew(r Request) {
+func CommandWordNew(r Request, c Channels) {
 	err := SendMessage("Enter Word Please", r.Chat_id)
 
 	if err != nil {
-		r.ErrC <- err
+		c.Err <- err
 	}
-	r.ErrC <- nil
+	c.Done <- true
 }
 
+// ! fix struct of function
 func GetUpdate(master *Master) error {
 	rest, err := GetMessage(master.url, &master.offset)
 
@@ -82,12 +71,12 @@ func GetUpdate(master *Master) error {
 	}
 
 	var r Request
-	r.OpenDb = master
+	r.OpenDb = master.OpenDb
 	for _, update := range rest.Result {
 		r.Text = update.Message.Text
 		r.Name = update.Message.User.Username
 		r.Chat_id = update.Message.Chat.Id
-		log.Print("\n\033[1;34mName:\033[0m\t", r.Name,
+		log.Print("\n\n\033[1;34mName:\033[0m\t", r.Name,
 			"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
 			"\n\033[1;34mWrote:\033[0m\t", r.Text, "\n\n")
 
@@ -99,39 +88,82 @@ func GetUpdate(master *Master) error {
 		function, ok := master.Commands[r.Text]
 
 		if ok {
-			r.C, ok = master.Rutines[r.Chat_id]
+			var channels Channels
+			channels, ok := master.Rutines[r.Chat_id]
 			if !ok {
-				master.Rutines[r.Chat_id] = make(chan string, 1)
-				r.C = master.Rutines[r.Chat_id]
-				go function(r)
+				fmt.Println("I am here")
+				channels.C = make(chan string)
+				channels.Done = make(chan bool)
+				channels.Err = make(chan error)
+				master.Rutines[r.Chat_id] = channels
+				go function(r, channels)
 			} else {
-				r.C <- r.Text
+				fmt.Println("and I am here")
+				channels.C <- r.Text
 			}
-			err, ok = <-master.errc
-			if !ok {
-				fmt.Println("Error ok")
-				delete(master.Rutines, r.Chat_id)
-				return nil
-			}
-			return err
-		} else {
-			words := strings.Split(update.Message.Text, "-")
-			if len(words) != 2 {
-				err = TranslateWord(r)
+			select {
+			case err := <-channels.Err:
+				fmt.Println("and I am here1")
 				if err != nil {
+					close(channels.C)
+					close(channels.Done)
+					close(channels.Err)
+					delete(master.Rutines, r.Chat_id)
 					return err
 				}
+			case done := <-channels.Done:
+				fmt.Println("and I am here2")
+				if done {
+					close(channels.C)
+					close(channels.Done)
+					close(channels.Err)
+					delete(master.Rutines, r.Chat_id)
+					break
+				}
+			}
+		} else {
+			channels, ok := master.Rutines[r.Chat_id]
+			if ok {
+				channels.C <- r.Text
+				select {
+				case err := <-channels.Err:
+					if err != nil {
+						fmt.Println("and I am here3")
+						delete(master.Rutines, r.Chat_id)
+						close(channels.C)
+						close(channels.Done)
+						close(channels.Err)
+						return err
+					}
+				case done := <-channels.Done:
+					if done {
+						fmt.Println("and I am here4")
+						close(channels.C)
+						close(channels.Done)
+						close(channels.Err)
+						delete(master.Rutines, r.Chat_id)
+						break
+					}
+				}
 			} else {
-				err = InsertWord(r.Name, words)
-				if err != nil {
-					SendMessage("Again", r.Chat_id)
+				words := strings.Split(update.Message.Text, "-")
+				if len(words) != 2 {
+					err = TranslateWord(r)
 					if err != nil {
 						return err
 					}
 				} else {
-					SendMessage("Ok", r.Chat_id)
+					err = InsertWord(r.Name, words)
 					if err != nil {
-						return err
+						SendMessage("Again", r.Chat_id)
+						if err != nil {
+							return err
+						}
+					} else {
+						SendMessage("Ok", r.Chat_id)
+						if err != nil {
+							return err
+						}
 					}
 				}
 			}
