@@ -14,6 +14,12 @@ type Channels struct {
 	Done chan bool
 }
 
+type Request struct {
+	Text    string
+	Name    string
+	Chat_id int
+	OpenDb  *sql.DB
+}
 
 type Master struct {
 	Commands map[string]func(Request, Channels)
@@ -22,7 +28,6 @@ type Master struct {
 	Offset   int
 	OpenDb   *sql.DB
 }
-
 
 func CommandWordKnow(r Request, c Channels) {
 	err := SendMessage("Enter Word Please", r.Chat_id)
