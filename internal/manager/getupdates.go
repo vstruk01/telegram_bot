@@ -285,6 +285,7 @@ func InitAll() (*Master, error) {
 	var err error
 	master := new(Master)
 
+	master.Commands = make(map[string]func(Request, Channels))
 	master.HandeFunc("/start", CommandStart)
 	master.HandeFunc("RepeatKnow", CommandRepeatKnow)
 	master.HandeFunc("ListKnow", CommandListKnow)
