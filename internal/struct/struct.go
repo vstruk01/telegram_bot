@@ -6,13 +6,13 @@ type Request struct {
 	Text    string
 	Name    string
 	Chat_id int
-	C chan string
+	C       chan string
 	OpenDb  *sql.DB
 }
 
 type Master struct {
 	Commands map[string]func(Request)
-	Rutines  map[int]chan string
+	Routines map[int]chan string
 	Url      string
 	Offset   int
 	OpenDb   *sql.DB

@@ -8,14 +8,12 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/vstruk01/telegram_bot/internal/commands"
 	"github.com/vstruk01/telegram_bot/internal/sends"
-	"github.com/vstruk01/telegram_bot/internal/struct"
+	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
 )
-
 
 type Chat struct {
 	Id int
@@ -87,46 +85,24 @@ func GetUpdate(master *botStruct.Master) error {
 		r.Text = update.Message.Text
 		r.Name = update.Message.User.Username
 		r.Chat_id = update.Message.Chat.Id
-		log.Print("\n\n\033[1;34mName:\033[0m\t", r.Name,
+		log.Print()
+		fmt.Print("\n\033[1;34mName:\033[0m\t\t", r.Name,
 			"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
-			"\n\033[1;34mWrote:\033[0m\t", r.Text, "\n\n")
+			"\n\033[1;34mWrote:\033[0m\t\t", r.Text, "\n\n")
 
 		err = CheckUser(r)
 		if err != nil {
 			return err
 		}
+		r.C = master.Routines[r.Chat_id]
 
 		function, ok := master.Commands[r.Text]
 
 		if ok {
 			go function(r)
-		} else {
-			channels, ok := master.Rutines[r.Chat_id]
-			if ok {
-				channels.C <- r.Text
-			} else {
-				words := strings.Split(update.Message.Text, "-")
-				if len(words) != 2 {
-					err = TranslateWord(r)
-					if err != nil {
-						return err
-					}
-				} else {
-					err = InsertWord(r.Name, words)
-					if err != nil {
-						SendMessage("Again", r.Chat_id)
-						if err != nil {
-							return err
-						}
-					} else {
-						SendMessage("Ok", r.Chat_id)
-						if err != nil {
-							return err
-						}
-					}
-				}
-			}
+			continue
 		}
+		r.C <- r.Text
 	}
 	return nil
 }
@@ -189,8 +165,8 @@ func InitAll() (*botStruct.Master, error) {
 	var err error
 	master := new(botStruct.Master)
 
+	// * create map of handlers
 	master.Commands = make(map[string]func(botStruct.Request))
-	master.Routines = make(map[int]chan string)
 	master.HandeFunc("/start", commands.CommandStart)
 	master.HandeFunc("RepeatKnow", commands.CommandRepeatKnow)
 	master.HandeFunc("ListKnow", commands.CommandListKnow)
@@ -199,12 +175,29 @@ func InitAll() (*botStruct.Master, error) {
 	master.HandeFunc("ListNew", commands.CommandListNew)
 	master.HandeFunc("RepeatNew", commands.CommandRepeatNew)
 	master.HandeFunc("DeleteWord", commands.CommandDeleteWord)
+
+	// * initialization other veriables
 	master.Url = "https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/"
 	master.Offset = 0
 	master.OpenDb, err = createDB()
 	if err != nil {
 		return nil, err
 	}
+
+	// * create map of chans for goroutines
+	master.Routines = make(map[int]chan string)
+	rows, err := master.OpenDb.Query("select chat_id from users")
+	if err != nil {
+		fmt.Print("\033[1;32mError WordKnow = ", err.Error(), "\033[0m\n")
+		return nil, err
+	}
+	var id int
+	for rows.Next() {
+		rows.Scan(&id)
+		sends.SetButton(id)
+		master.Routines[id] = make(chan string)
+	}
+
 	return master, nil
 }
 

@@ -7,16 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
+	"github.com/vstruk01/telegram_bot/internal/struct"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type Request struct {
-	Text    string
-	Name    string
-	Chat_id int
-	OpenDb  *sql.DB
-}
 
 type KeyboardButton struct {
 	Text string `json:"text"`
@@ -40,7 +34,7 @@ type BotMessage struct {
 	Text    string `json:"text"`
 }
 
-func TranslateWord(r Request) error {
+func TranslateWord(r botStruct.Request) error {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
 		fmt.Print("\033[1;34mError Translate Word 1\033[0m\n")
@@ -83,10 +77,11 @@ func SendWords(rows *sql.Rows, chat_id int) error {
 func SetButton(chat_id int) error {
 	var m Button
 	m.Chat_id = chat_id
-	buttonAll := make([][]KeyboardButton, 3)
+	buttonAll := make([][]KeyboardButton, 4)
 	buttonOne := make([]KeyboardButton, 2)
 	buttonTwo := make([]KeyboardButton, 2)
 	buttonThree := make([]KeyboardButton, 2)
+	buttonFour := make([]KeyboardButton, 2)
 	buttonOne[0].Text = "RepeatNew"
 	buttonOne[1].Text = "RepeatKnow"
 	buttonAll[0] = buttonOne
@@ -96,6 +91,9 @@ func SetButton(chat_id int) error {
 	buttonThree[0].Text = "ListNew"
 	buttonThree[1].Text = "ListKnow"
 	buttonAll[2] = buttonThree
+	buttonFour[0].Text = "DeleteWord"
+	buttonFour[1].Text = "AddWord"
+	buttonAll[3] = buttonThree
 	m.Reply_markup.Keyboard = buttonAll
 	m.Reply_markup.Resize_keyboard = true
 	m.Reply_markup.One_time_keyboard = true
