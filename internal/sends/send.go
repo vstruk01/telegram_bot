@@ -6,10 +6,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/vstruk01/telegram_bot/internal/manager"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 )
+
+type Request struct {
+	Text    string
+	Name    string
+	Chat_id int
+	OpenDb  *sql.DB
+}
 
 type KeyboardButton struct {
 	Text string `json:"text"`
