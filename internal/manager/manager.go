@@ -85,10 +85,11 @@ func GetUpdate(master *botStruct.Master) error {
 		r.Text = update.Message.Text
 		r.Name = update.Message.User.Username
 		r.Chat_id = update.Message.Chat.Id
-		log.Print()
 		fmt.Print("\n\033[1;34mName:\033[0m\t\t", r.Name,
 			"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
-			"\n\033[1;34mWrote:\033[0m\t\t", r.Text, "\n\n")
+			"\n\033[1;34mWrote:\033[0m\t\t", r.Text, "\n")
+		log.Print()
+		fmt.Println()
 
 		err = CheckUser(r)
 		if err != nil {
@@ -99,10 +100,14 @@ func GetUpdate(master *botStruct.Master) error {
 		function, ok := master.Commands[r.Text]
 
 		if ok {
+			fmt.Println("I am here1")
 			go function(r)
 			continue
 		}
+		
+		fmt.Println("I am here2")
 		r.C <- r.Text
+		fmt.Println("I am here3")
 	}
 	return nil
 }
@@ -110,12 +115,7 @@ func GetUpdate(master *botStruct.Master) error {
 func CheckUser(r botStruct.Request) error {
 	var n string
 
-	database, err := sql.Open("sqlite3", "./words.db")
-	if err != nil {
-		fmt.Print("\033[1;34mCheck User\033[0m\n")
-		return err
-	}
-	rows, err := database.Query("select name from users WHERE name = ? and chat_id = ?", r.Name, r.Chat_id)
+	rows, err := r.OpenDb.Query("select name from users WHERE name = ? and chat_id = ?", r.Name, r.Chat_id)
 	if err != nil {
 		fmt.Print("\033[1;34mCheck User\033[0m\n")
 		return err
@@ -143,12 +143,7 @@ func CheckUser(r botStruct.Request) error {
 }
 
 func AddUser(r botStruct.Request) error {
-	database, err := sql.Open("sqlite3", "./words.db")
-	if err != nil {
-		fmt.Print("\033[1;34mAdd User\033[0m\n")
-		return err
-	}
-	statement, err := database.Prepare("insert into users (name, chat_id)values(?, ?)")
+	statement, err := r.OpenDb.Prepare("insert into users (name, chat_id)values(?, ?)")
 	if err != nil {
 		fmt.Print("\033[1;34mAdd User\033[0m\n")
 		return err
@@ -196,6 +191,7 @@ func InitAll() (*botStruct.Master, error) {
 		rows.Scan(&id)
 		sends.SetButton(id)
 		master.Routines[id] = make(chan string)
+		fmt.Println("id = ", id)
 	}
 
 	return master, nil
