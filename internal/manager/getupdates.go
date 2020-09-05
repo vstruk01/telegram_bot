@@ -9,9 +9,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+	_ "github.com/mattn/go-sqlite3"
 	. "github.com/vstruk01/telegram_bot/internal/commands"
 	. "github.com/vstruk01/telegram_bot/internal/sends"
-	_ "github.com/mattn/go-sqlite3"
 )
 
 // type Channels struct {
@@ -119,7 +120,7 @@ func CommandWordNew(r Request, c Channels) {
 
 // ! fix struct of function
 func GetUpdate(master *Master) error {
-	rest, err := GetMessage(master.url, &master.offset)
+	rest, err := GetMessage(master.Url, &master.Offset)
 
 	if err != nil || len(rest.Result) == 0 {
 		return err
@@ -253,7 +254,7 @@ func CheckUser(name string, chat_id int) error {
 		if err != nil {
 			return err
 		} else {
-			setButton(chat_id)
+			SetButton(chat_id)
 			return nil
 		}
 	}
@@ -291,7 +292,7 @@ func InitAll() (*Master, error) {
 	master.HandeFunc("WordNew", CommandWordNew)
 	master.HandeFunc("ListNew", CommandListNew)
 	master.HandeFunc("RepeatNew", CommandRepeatNew)
-	master.HandeFunc("DeleteWord", CommandDeleteWord)
+	// master.HandeFunc("DeleteWord", CommandDeleteWord)
 	master.Url = "https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/"
 	master.Offset = 0
 	master.OpenDb, err = createDB()

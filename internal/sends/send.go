@@ -80,7 +80,7 @@ func SendWords(rows *sql.Rows, chat_id int) error {
 	return nil
 }
 
-func setButton(chat_id int) error {
+func SetButton(chat_id int) error {
 	var m Button
 	m.Chat_id = chat_id
 	buttonAll := make([][]KeyboardButton, 3)
