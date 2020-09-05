@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"github.com/vstruk01/telegram_bot/master/internal/sends"
+	"github.com/vstruk01/telegram_bot/internal/sends"
 	_ "github.com/mattn/go-sqlite3"
 )
 

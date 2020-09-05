@@ -1,9 +1,8 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
-	_ "github.com/vstruk01/telegram_bot/tree/master/internal/manager"
+	"github.com/vstruk01/telegram_bot/internal/manager"
 	_ "github.com/mattn/go-sqlite3"
 )
 
