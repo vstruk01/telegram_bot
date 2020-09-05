@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
-	. "github.com/vstruk01/telegram_bot/internal/commands"
-	. "github.com/vstruk01/telegram_bot/internal/sends"
+	"github.com/vstruk01/telegram_bot/internal/commands"
+	"github.com/vstruk01/telegram_bot/internal/sends"
 )
 
 // type Channels struct {
@@ -136,7 +136,7 @@ func GetUpdate(master *Master) error {
 			"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
 			"\n\033[1;34mWrote:\033[0m\t", r.Text, "\n\n")
 
-		err = CheckUser(r.Name, r.Chat_id)
+		err = CheckUser(r)
 		if err != nil {
 			return err
 		}
@@ -144,63 +144,11 @@ func GetUpdate(master *Master) error {
 		function, ok := master.Commands[r.Text]
 
 		if ok {
-			var channels Channels
-			channels, ok := master.Rutines[r.Chat_id]
-			if !ok {
-				fmt.Println("I am here")
-				channels.C = make(chan string)
-				channels.Done = make(chan bool)
-				channels.Err = make(chan error)
-				master.Rutines[r.Chat_id] = channels
-				go function(r, channels)
-			} else {
-				fmt.Println("and I am here")
-				channels.C <- r.Text
-			}
-			select {
-			case err := <-channels.Err:
-				fmt.Println("and I am here1")
-				if err != nil {
-					close(channels.C)
-					close(channels.Done)
-					close(channels.Err)
-					delete(master.Rutines, r.Chat_id)
-					return err
-				}
-			case done := <-channels.Done:
-				fmt.Println("and I am here2")
-				if done {
-					close(channels.C)
-					close(channels.Done)
-					close(channels.Err)
-					delete(master.Rutines, r.Chat_id)
-					break
-				}
-			}
+			go function(r)
 		} else {
 			channels, ok := master.Rutines[r.Chat_id]
 			if ok {
 				channels.C <- r.Text
-				select {
-				case err := <-channels.Err:
-					if err != nil {
-						fmt.Println("and I am here3")
-						delete(master.Rutines, r.Chat_id)
-						close(channels.C)
-						close(channels.Done)
-						close(channels.Err)
-						return err
-					}
-				case done := <-channels.Done:
-					if done {
-						fmt.Println("and I am here4")
-						close(channels.C)
-						close(channels.Done)
-						close(channels.Err)
-						delete(master.Rutines, r.Chat_id)
-						break
-					}
-				}
 			} else {
 				words := strings.Split(update.Message.Text, "-")
 				if len(words) != 2 {

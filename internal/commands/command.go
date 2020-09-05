@@ -16,7 +16,7 @@ type Channels struct {
 
 type Master struct {
 	Commands map[string]func(Request, Channels)
-	Rutines  map[int]Channels
+	Rutines  map[int]chan string
 	Url      string
 	Offset   int
 	OpenDb   *sql.DB
