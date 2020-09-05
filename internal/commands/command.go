@@ -22,6 +22,15 @@ type Master struct {
 	OpenDb   *sql.DB
 }
 
+func (m Master) HandeFunc(command string, f func(Request, Channels)) {
+	m.Commands[command] = f
+}
+
+func (m Master) GetCommand(command string) (func(Request, Channels), bool) {
+	f, ok := m.Commands[command]
+	return f, ok
+}
+
 func CommandWordKnow(r Request, c Channels) {
 	err := SendMessage("Enter Word Please", r.Chat_id)
 	var word, translate, answer string

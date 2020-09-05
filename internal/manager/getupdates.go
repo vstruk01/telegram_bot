@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 	. "github.com/vstruk01/telegram_bot/internal/commands"
-	// . "github.com/vstruk01/telegram_bot/internal/sends"
+	. "github.com/vstruk01/telegram_bot/internal/sends"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -35,14 +35,14 @@ import (
 // 	OpenDb   *sql.DB
 // }
 
-func (m Master) HandeFunc(command string, f func(Request, Channels)) {
-	m.Commands[command] = f
-}
+// func (m Master) HandeFunc(command string, f func(Request, Channels)) {
+// 	m.Commands[command] = f
+// }
 
-func (m Master) GetCommand(command string) (func(Request, Channels), bool) {
-	f, ok := m.Commands[command]
-	return f, ok
-}
+// func (m Master) GetCommand(command string) (func(Request, Channels), bool) {
+// 	f, ok := m.Commands[command]
+// 	return f, ok
+// }
 
 type Chat struct {
 	Id int
