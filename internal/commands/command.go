@@ -8,6 +8,22 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type Channels struct {
+	C    chan string
+	Err  chan error
+	Done chan bool
+}
+
+
+type Master struct {
+	Commands map[string]func(Request, Channels)
+	Rutines  map[int]Channels
+	Url      string
+	Offset   int
+	OpenDb   *sql.DB
+}
+
+
 func CommandWordKnow(r Request, c Channels) {
 	err := SendMessage("Enter Word Please", r.Chat_id)
 	var word, translate, answer string

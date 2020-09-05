@@ -14,27 +14,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type Channels struct {
-	C    chan string
-	Err  chan error
-	Done chan bool
-}
-
-type Request struct {
-	Text    string
-	Name    string
-	Chat_id int
-	OpenDb  *sql.DB
-}
-
-type Master struct {
-	Commands map[string]func(Request, Channels)
-	Rutines  map[int]Channels
-	Url      string
-	Offset   int
-	OpenDb   *sql.DB
-}
-
 func (m Master) HandeFunc(command string, f func(Request, Channels)) {
 	m.Commands[command] = f
 }
