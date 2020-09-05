@@ -23,20 +23,19 @@ func main() {
 }
 
 func InitAll() (*Master, error) {
+	var err error
 	master := new(Master)
 
-	master.Commands = make(map[string]func(Request, Channels))
-	master.Commands["/start"] = CommandStart
-	master.Commands["RepeatKnow"] = CommandRepeatKnow
-	master.Commands["ListKnow"] = CommandListKnow
-	master.Commands["WordKnow"] = CommandWordKnow
-	master.Commands["WordNew"] = CommandWordNew
-	master.Commands["ListNew"] = CommandListNew
-	master.Commands["RepeatNew"] = CommandRepeatNew
-	master.Rutines = make(map[int]Channels)
-	master.url = "https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/"
-	master.offset = 0
-	var err error
+	master.HandeFunc("/start", CommandStart)
+	master.HandeFunc("RepeatKnow", CommandRepeatKnow)
+	master.HandeFunc("ListKnow", CommandListKnow)
+	master.HandeFunc("WordKnow", CommandWordKnow)
+	master.HandeFunc("WordNew", CommandWordNew)
+	master.HandeFunc("ListNew", CommandListNew)
+	master.HandeFunc("RepeatNew", CommandRepeatNew)
+	master.HandeFunc("DeleteWord", CommandDeleteWord)
+	master.Url = "https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/"
+	master.Offset = 0
 	master.OpenDb, err = createDB()
 	if err != nil {
 		return nil, err

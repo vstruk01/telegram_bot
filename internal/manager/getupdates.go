@@ -1,4 +1,4 @@
-package main
+package manager
 
 import (
 	"database/sql"
@@ -9,9 +9,64 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
+	""
 	_ "github.com/mattn/go-sqlite3"
 )
+
+type Channels struct {
+	C    chan string
+	Err  chan error
+	Done chan bool
+}
+
+type Request struct {
+	Text    string
+	Name    string
+	Chat_id int
+	OpenDb  *sql.DB
+}
+
+type Master struct {
+	Commands map[string]func(Request, Channels)
+	Rutines  map[int]Channels
+	Url      string
+	Offset   int
+	OpenDb   *sql.DB
+}
+
+func (m Master) HandeFunc(command string, f func(Request, Channels)) {
+	m.Commands[command] = f
+}
+
+func (m Master) GetCommand(command string) (func(Request, Channels), bool) {
+	f, ok := m.Commands[command];
+	return f, ok
+}
+
+type Chat struct {
+	Id int
+}
+
+type User struct {
+	Username string `json:"username"`
+}
+
+type Message struct {
+	Chat Chat
+	User User `json:"from"`
+	Text string
+}
+
+type Update struct {
+	Update_id int
+	Message   Message `json:"message"`
+}
+
+type RestResponse struct {
+	Ok     bool     `json:"ok"`
+	Result []Update `json:"result"`
+}
+
 
 func GetMessage(url string, offset *int) (RestResponse, error) {
 	resp, err := http.Get(url + "getUpdates" + "?offset=" + strconv.Itoa(*offset))
@@ -225,6 +280,52 @@ func AddUser(name string, chat_id int) error {
 	return nil
 }
 
-func Know() {
+func InitAll() (*Master, error) {
+	var err error
+	master := new(Master)
 
+	master.HandeFunc("/start", CommandStart)
+	master.HandeFunc("RepeatKnow", CommandRepeatKnow)
+	master.HandeFunc("ListKnow", CommandListKnow)
+	master.HandeFunc("WordKnow", CommandWordKnow)
+	master.HandeFunc("WordNew", CommandWordNew)
+	master.HandeFunc("ListNew", CommandListNew)
+	master.HandeFunc("RepeatNew", CommandRepeatNew)
+	master.HandeFunc("DeleteWord", CommandDeleteWord)
+	master.Url = "https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/"
+	master.Offset = 0
+	master.OpenDb, err = createDB()
+	if err != nil {
+		return nil, err
+	}
+	return master, nil
+}
+
+func createDB() (*sql.DB, error) {
+	database, err := sql.Open("sqlite3", "./words.db")
+	if err != nil {
+		fmt.Print("\033[1;34m CreateDB open\033[0m\n")
+		return nil, err
+	}
+	statement, err := database.Prepare("CREATE TABLE IF NOT EXISTS words (id INTEGER PRIMARY KEY, name TEXT, word TEXT, transcription TEXT, translate TEXT, ok int)")
+	if err != nil {
+		fmt.Print("\033[1;34createDB words\033[0m\n")
+		return nil, err
+	}
+	_, err = statement.Exec()
+	if err != nil {
+		fmt.Print("\033[1;34createDB open\033[0m\n")
+		return nil, err
+	}
+	statement, err = database.Prepare("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, chat_id INT)")
+	if err != nil {
+		fmt.Print("\033[1;34mCreate DB Users\033[0m\n")
+		return nil, err
+	}
+	_, err = statement.Exec()
+	if err != nil {
+		fmt.Print("\033[1;34mCreate DB Users\033[0m\n")
+		return nil, err
+	}
+	return database, nil
 }

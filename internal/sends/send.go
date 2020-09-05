@@ -1,4 +1,4 @@
-package main
+package sends
 
 import (
 	"bytes"
@@ -9,6 +9,28 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"strings"
 )
+
+type KeyboardButton struct {
+	Text string `json:"text"`
+}
+
+type ReplyKeyboardMarkup struct {
+	Keyboard          [][]KeyboardButton `json:"keyboard"`
+	Resize_keyboard   bool               `json:"resize_keyboard"`
+	One_time_keyboard bool               `json:"one_time_keyboard"`
+	Selective         bool               `json:"selective"`
+}
+
+type Button struct {
+	Chat_id      int                 `json:"chat_id"`
+	Text         string              `json:"text"`
+	Reply_markup ReplyKeyboardMarkup `json:"reply_markup"`
+}
+
+type BotMessage struct {
+	Chat_id int    `json:"chat_id"`
+	Text    string `json:"text"`
+}
 
 func TranslateWord(r Request) error {
 	database, err := sql.Open("sqlite3", "./words.db")
