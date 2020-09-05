@@ -13,37 +13,9 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/vstruk01/telegram_bot/internal/commands"
 	"github.com/vstruk01/telegram_bot/internal/sends"
+	"github.com/vstruk01/telegram_bot/internal/struct"
 )
 
-// type Channels struct {
-// 	C    chan string
-// 	Err  chan error
-// 	Done chan bool
-// }
-
-// type Request struct {
-// 	Text    string
-// 	Name    string
-// 	Chat_id int
-// 	OpenDb  *sql.DB
-// }
-
-// type Master struct {
-// 	Commands map[string]func(Request, Channels)
-// 	Rutines  map[int]Channels
-// 	Url      string
-// 	Offset   int
-// 	OpenDb   *sql.DB
-// }
-
-// func (m Master) HandeFunc(command string, f func(Request, Channels)) {
-// 	m.Commands[command] = f
-// }
-
-// func (m Master) GetCommand(command string) (func(Request, Channels), bool) {
-// 	f, ok := m.Commands[command]
-// 	return f, ok
-// }
 
 type Chat struct {
 	Id int
@@ -101,32 +73,15 @@ func GetMessage(url string, offset *int) (RestResponse, error) {
 	return restResponse, nil
 }
 
-func CommandRepeatKnow(r Request, c Channels) {
-	c.Done <- true
-}
-
-func CommandRepeatNew(r Request, c Channels) {
-	c.Done <- true
-}
-
-func CommandWordNew(r Request, c Channels) {
-	err := SendMessage("Enter Word Please", r.Chat_id)
-
-	if err != nil {
-		c.Err <- err
-	}
-	c.Done <- true
-}
-
 // ! fix struct of function
-func GetUpdate(master *Master) error {
+func GetUpdate(master *botStruct.Master) error {
 	rest, err := GetMessage(master.Url, &master.Offset)
 
 	if err != nil || len(rest.Result) == 0 {
 		return err
 	}
 
-	var r Request
+	var r botStruct.Request
 	r.OpenDb = master.OpenDb
 	for _, update := range rest.Result {
 		r.Text = update.Message.Text
@@ -176,7 +131,7 @@ func GetUpdate(master *Master) error {
 	return nil
 }
 
-func CheckUser(name string, chat_id int) error {
+func CheckUser(r botStruct.Request) error {
 	var n string
 
 	database, err := sql.Open("sqlite3", "./words.db")
@@ -184,7 +139,7 @@ func CheckUser(name string, chat_id int) error {
 		fmt.Print("\033[1;34mCheck User\033[0m\n")
 		return err
 	}
-	rows, err := database.Query("select name from users WHERE name = ? and chat_id = ?", name, chat_id)
+	rows, err := database.Query("select name from users WHERE name = ? and chat_id = ?", r.Name, r.Chat_id)
 	if err != nil {
 		fmt.Print("\033[1;34mCheck User\033[0m\n")
 		return err
@@ -198,11 +153,12 @@ func CheckUser(name string, chat_id int) error {
 			return err
 		}
 	} else {
-		err = AddUser(name, chat_id)
+		err = AddUser(r)
 		if err != nil {
 			return err
 		} else {
-			SetButton(chat_id)
+			r.C = make(chan string)
+			sends.SetButton(r.Chat_id)
 			return nil
 		}
 	}
@@ -210,7 +166,7 @@ func CheckUser(name string, chat_id int) error {
 	return nil
 }
 
-func AddUser(name string, chat_id int) error {
+func AddUser(r botStruct.Request) error {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
 		fmt.Print("\033[1;34mAdd User\033[0m\n")
@@ -221,7 +177,7 @@ func AddUser(name string, chat_id int) error {
 		fmt.Print("\033[1;34mAdd User\033[0m\n")
 		return err
 	}
-	_, err = statement.Exec(name, chat_id)
+	_, err = statement.Exec(r.Name, r.Chat_id)
 	if err != nil {
 		fmt.Print("\033[1;34mAdd User\033[0m\n")
 		return err
@@ -229,19 +185,20 @@ func AddUser(name string, chat_id int) error {
 	return nil
 }
 
-func InitAll() (*Master, error) {
+func InitAll() (*botStruct.Master, error) {
 	var err error
-	master := new(Master)
+	master := new(botStruct.Master)
 
-	master.Commands = make(map[string]func(Request, Channels))
-	master.HandeFunc("/start", CommandStart)
-	master.HandeFunc("RepeatKnow", CommandRepeatKnow)
-	master.HandeFunc("ListKnow", CommandListKnow)
-	master.HandeFunc("WordKnow", CommandWordKnow)
-	master.HandeFunc("WordNew", CommandWordNew)
-	master.HandeFunc("ListNew", CommandListNew)
-	master.HandeFunc("RepeatNew", CommandRepeatNew)
-	// master.HandeFunc("DeleteWord", CommandDeleteWord)
+	master.Commands = make(map[string]func(botStruct.Request))
+	master.Routines = make(map[int]chan string)
+	master.HandeFunc("/start", commands.CommandStart)
+	master.HandeFunc("RepeatKnow", commands.CommandRepeatKnow)
+	master.HandeFunc("ListKnow", commands.CommandListKnow)
+	master.HandeFunc("WordKnow", commands.CommandWordKnow)
+	master.HandeFunc("WordNew", commands.CommandWordNew)
+	master.HandeFunc("ListNew", commands.CommandListNew)
+	master.HandeFunc("RepeatNew", commands.CommandRepeatNew)
+	master.HandeFunc("DeleteWord", commands.CommandDeleteWord)
 	master.Url = "https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/"
 	master.Offset = 0
 	master.OpenDb, err = createDB()
