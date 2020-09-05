@@ -1,3 +1,5 @@
+# include .env
+
 export
 
 BINARY_DIR=bin/
@@ -7,7 +9,7 @@ MAIN=main
 all: compile
 
 compile: | $(BINARY_DIR)
-	@go build -o $(BINARY_DIR)$(PROJECT_NAME) main.go struct.go getupdates.go command.go send.go
+	@go build -o $(BINARY_DIR)$(PROJECT_NAME) main.go
 
 $(BINARY_DIR):
 	@mkdir -p bin

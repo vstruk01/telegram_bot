@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/vstruk01/telegram_bot/tree/master/internal"
 	"strings"
 )
 

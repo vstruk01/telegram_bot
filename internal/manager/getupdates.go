@@ -9,7 +9,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	""
+	"github.com/vstruk01/telegram_bot/master/internal/sends"
+	"github.com/vstruk01/telegram_bot/master/internal/commands"
 	_ "github.com/mattn/go-sqlite3"
 )
 
