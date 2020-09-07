@@ -104,7 +104,6 @@ func GetUpdate(master *botStruct.Master) error {
 			go function(r)
 			continue
 		}
-		
 		fmt.Println("I am here2")
 		r.C <- r.Text
 		fmt.Println("I am here3")
