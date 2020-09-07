@@ -11,6 +11,8 @@ import (
 )
 
 func InitAll() (*botStruct.Master, error) {
+	log.InitLog()
+
 	master := new(botStruct.Master)
 	var err error
 
@@ -24,7 +26,7 @@ func InitAll() (*botStruct.Master, error) {
 	master.HandeFunc("ListNew", commands.CommandListNew)
 	master.HandeFunc("RepeatNew", commands.CommandRepeatNew)
 	master.HandeFunc("DeleteWord", commands.CommandDeleteWord)
-	master.HandeFunc("AddWord", commands.CommandDeleteWord)
+	master.HandeFunc("AddWord", commands.CommandAddWord)
 
 	// * initialization other veriables
 	master.Offset = 0
@@ -34,7 +36,7 @@ func InitAll() (*botStruct.Master, error) {
 	}
 
 	// * create map of chans for goroutines
-	master.Routines = make(map[int]botStruct.Channels)
+	master.Routines = make(map[int]*botStruct.Channels)
 	rows, err := master.OpenDb.Query("select chat_id from users")
 	if err != nil {
 		return nil, err
@@ -46,7 +48,7 @@ func InitAll() (*botStruct.Master, error) {
 		sends.SetButton(id)
 		ch.C = make(chan string, 1)
 		ch.Done = make(chan bool, 1)
-		master.Routines[id] = ch
+		master.Routines[id] = &ch
 	}
 
 	return master, nil

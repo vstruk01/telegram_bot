@@ -11,7 +11,7 @@ type Request struct {
 	Text    string
 	Name    string
 	Chat_id int
-	Ch      Channels
+	Ch      *	Channels
 	OpenDb  *sql.DB
 }
 
@@ -22,7 +22,7 @@ type Channels struct {
 
 type Master struct {
 	Commands map[string]func(Request) // * list command for telegram bot
-	Routines map[int]Channels         // * chanells for communication with goroutines
+	Routines map[int]*Channels         // * chanells for communication with goroutines
 	Offset   int                      // * counter of request
 	OpenDb   *sql.DB                  // * connect with database
 }

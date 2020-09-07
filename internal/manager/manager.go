@@ -2,7 +2,6 @@ package manager
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -39,7 +38,7 @@ type RestResponse struct {
 }
 
 func GetMessage(offset *int) (RestResponse, error) {
-	resp, err := http.Get(botStruct.Url + botStruct.Token + "getUpdates" + "?offset=" + strconv.Itoa(*offset))
+	resp, err := http.Get(botStruct.Url + botStruct.Token + "/getUpdates" + "?offset=" + strconv.Itoa(*offset))
 	if log.CheckErr(err) {
 		return RestResponse{}, err
 	}
@@ -70,9 +69,11 @@ func GetUpdate(master *botStruct.Master) {
 	var r botStruct.Request
 	r.OpenDb = master.OpenDb
 	for {
-		fmt.Println("hello0")
 		rest, err := GetMessage(&master.Offset)
-		if log.CheckErr(err) || len(rest.Result) == 0 {
+		if err != nil || len(rest.Result) == 0 {
+			if err != nil {
+				log.Error.Println(err.Error())
+			}
 			continue
 		}
 		for _, update := range rest.Result {
@@ -82,20 +83,20 @@ func GetUpdate(master *botStruct.Master) {
 			log.Info.Println("\n\033[1;34mName:\033[0m\t\t", r.Name,
 				"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
 				"\n\033[1;34mWrote:\033[0m\t\t", r.Text)
-			if log.CheckErr(CheckUser(r)) {
+			if CheckUser(r) != nil {
+				log.Error.Println(err.Error())
 				continue
 			}
 			r.Ch = master.Routines[r.Chat_id]
 			function, ok := master.Commands[r.Text]
 			if ok {
-				fmt.Println("hello1")
-				log.Info.Println("hello error")
+				if len(r.Ch.Done) != 0 {
+					<-r.Ch.Done
+				}
 				go function(r)
 				continue
 			}
 			if len(r.Ch.Done) != 0 {
-				fmt.Println("hello1")
-				log.Info.Println("hello error")
 				<-r.Ch.Done
 				go commands.Translate(r)
 				continue
@@ -109,35 +110,39 @@ func CheckUser(r botStruct.Request) error {
 	var n string
 
 	rows, err := r.OpenDb.Query("select name from users WHERE name = ? and chat_id = ?", r.Name, r.Chat_id)
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	if rows.Next() {
 		err = rows.Scan(&n)
 		err = rows.Close()
-		if log.CheckErr(err) {
+		if err != nil {
+			log.Error.Println(err.Error())
 			return err
 		}
 	} else {
 		err = AddUser(r)
-		if log.CheckErr(err) {
+		if err != nil {
+			log.Error.Println(err.Error())
 			return err
 		}
 		r.Ch.C = make(chan string, 1)
 		r.Ch.Done = make(chan bool, 1)
 		sends.SetButton(r.Chat_id)
-		return nil
 	}
 	return nil
 }
 
 func AddUser(r botStruct.Request) error {
 	statement, err := r.OpenDb.Prepare("insert into users (name, chat_id)values(?, ?)")
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	_, err = statement.Exec(r.Name, r.Chat_id)
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	return nil

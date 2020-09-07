@@ -51,7 +51,8 @@ func SendWords(rows *sql.Rows, chat_id int) error {
 		message += "Hmmmmm I think that you wrong"
 	}
 	err := SendMessage(message, chat_id)
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	return nil
@@ -84,11 +85,13 @@ func SetButton(chat_id int) error {
 	m.Text = "set keyboard"
 
 	buf, err := json.Marshal(m)
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	_, err = http.Post(botStruct.Url+botStruct.Token+"/sendMessage", "application/json", bytes.NewBuffer(buf))
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	return nil
@@ -100,11 +103,13 @@ func SendMessage(message string, chat_id int) error {
 	m.Text = message
 
 	buf, err := json.Marshal(m)
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	_, err = http.Post(botStruct.Url+botStruct.Token+"/sendMessage", "application/json", bytes.NewBuffer(buf))
-	if log.CheckErr(err) {
+	if err != nil {
+		log.Error.Println(err.Error())
 		return err
 	}
 	return nil
