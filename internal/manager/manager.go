@@ -7,8 +7,8 @@ import (
 	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
-	Init "github.com/vstruk01/telegram_bot/init"
-	"github.com/vstruk01/telegram_bot/internal/sends"
+	log "github.com/vstruk01/telegram_bot/internal/Logger"
+	sends "github.com/vstruk01/telegram_bot/internal/sends"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
 )
 
@@ -27,7 +27,7 @@ type Message struct {
 }
 
 type Update struct {
-	Update_id int
+	Update_id int     `json:"update_id"`
 	Message   Message `json:"message"`
 }
 
@@ -38,19 +38,19 @@ type RestResponse struct {
 
 func GetMessage(offset *int) (RestResponse, error) {
 	resp, err := http.Get(botStruct.Url + botStruct.Token + "getUpdates" + "?offset=" + strconv.Itoa(*offset))
-	if Init.CheckErr(err) {
+	if log.CheckErr(err) {
 		return RestResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
-	if Init.CheckErr(err) {
+	if log.CheckErr(err) {
 		return RestResponse{}, err
 	}
 
 	var restResponse RestResponse
 	err = json.Unmarshal(body, &restResponse)
-	if Init.CheckErr(err) {
+	if log.CheckErr(err) {
 		return RestResponse{}, err
 	}
 
@@ -64,14 +64,14 @@ func GetMessage(offset *int) (RestResponse, error) {
 	return restResponse, nil
 }
 
-// ! fix struct of function
+//
 func GetUpdate(master *botStruct.Master) {
 	var r botStruct.Request
 	r.OpenDb = master.OpenDb
 	for {
 		rest, err := GetMessage(&master.Offset)
 
-		if Init.CheckErr(err) || len(rest.Result) == 0 {
+		if log.CheckErr(err) || len(rest.Result) == 0 {
 			continue
 		}
 
@@ -79,10 +79,10 @@ func GetUpdate(master *botStruct.Master) {
 			r.Text = update.Message.Text
 			r.Name = update.Message.User.Username
 			r.Chat_id = update.Message.Chat.Id
-			Init.Info.Println("\n\033[1;34mName:\033[0m\t\t", r.Name,
+			log.Info.Println("\n\033[1;34mName:\033[0m\t\t", r.Name,
 				"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
 				"\n\033[1;34mWrote:\033[0m\t\t", r.Text)
-			if Init.CheckErr(CheckUser(r)) {
+			if log.CheckErr(CheckUser(r)) {
 				continue
 			}
 			r.Ch = master.Routines[r.Chat_id]
@@ -105,19 +105,19 @@ func CheckUser(r botStruct.Request) error {
 	var n string
 
 	rows, err := r.OpenDb.Query("select name from users WHERE name = ? and chat_id = ?", r.Name, r.Chat_id)
-	if CheckErr(err) {
+	if log.CheckErr(err) {
 		return err
 	}
 
 	if rows.Next() {
 		err = rows.Scan(&n)
 		err = rows.Close()
-		if CheckErr(err) {
+		if log.CheckErr(err) {
 			return err
 		}
 	} else {
 		err = AddUser(r)
-		if CheckErr(err) {
+		if log.CheckErr(err) {
 			return err
 		}
 		r.Ch.C = make(chan string, 1)
@@ -125,17 +125,17 @@ func CheckUser(r botStruct.Request) error {
 		sends.SetButton(r.Chat_id)
 		return nil
 	}
-	Info.Println("\033[1;34mCheck User Ok\033[0m")
+	log.Info.Println("\033[1;34mCheck User Ok\033[0m")
 	return nil
 }
 
 func AddUser(r botStruct.Request) error {
 	statement, err := r.OpenDb.Prepare("insert into users (name, chat_id)values(?, ?)")
-	if CheckErr(err) {
+	if log.CheckErr(err) {
 		return err
 	}
 	_, err = statement.Exec(r.Name, r.Chat_id)
-	if CheckErr(err) {
+	if log.CheckErr(err) {
 		return err
 	}
 	return nil
