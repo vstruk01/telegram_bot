@@ -116,6 +116,18 @@ func CommandListNew(r botStruct.Request) {
 	r.Ch.Done <- true
 }
 
+func Translate(r botStruct.Request) error {
+	rows, err := r.OpenDb.Query("select word, translate from words where name = ? and word = ?", r.Name, r.Text)
+	if log.CheckErr(err) {
+		return err
+	}
+	err = sends.SendWords(rows, r.Chat_id)
+	if log.CheckErr(err) {
+		return err
+	}
+	return nil
+}
+
 func CommandListKnow(r botStruct.Request) {
 	rows, err := r.OpenDb.Query("select word, translate from words where name = ? and ok > 0", r.Name)
 	if log.CheckErr(err) {
@@ -130,8 +142,4 @@ func CommandStart(r botStruct.Request) {
 	err := sends.SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
 	log.CheckErr(err)
 	r.Ch.Done <- true
-}
-
-func Translate(r botStruct.Request) {
-
 }

@@ -2,13 +2,12 @@ package Init
 
 import (
 	"database/sql"
-	"fmt"
 
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	"github.com/vstruk01/telegram_bot/internal/commands"
 	"github.com/vstruk01/telegram_bot/internal/sends"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
-	log "github.com/vstruk01/telegram_bot/internal/Logger"
 )
 
 func InitAll() (*botStruct.Master, error) {
@@ -38,7 +37,6 @@ func InitAll() (*botStruct.Master, error) {
 	master.Routines = make(map[int]botStruct.Channels)
 	rows, err := master.OpenDb.Query("select chat_id from users")
 	if err != nil {
-		fmt.Print("\033[1;32mError WordKnow = ", err.Error(), "\033[0m\n")
 		return nil, err
 	}
 	var id int
@@ -49,7 +47,6 @@ func InitAll() (*botStruct.Master, error) {
 		ch.C = make(chan string, 1)
 		ch.Done = make(chan bool, 1)
 		master.Routines[id] = ch
-		fmt.Println("id = ", id)
 	}
 
 	return master, nil

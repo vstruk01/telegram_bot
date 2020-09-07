@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
 )
 
@@ -34,25 +34,6 @@ type BotMessage struct {
 	Text    string `json:"text"`
 }
 
-func TranslateWord(r botStruct.Request) error {
-	database, err := sql.Open("sqlite3", "./words.db")
-	if err != nil {
-		fmt.Print("\033[1;34mError Translate Word 1\033[0m\n")
-		return err
-	}
-	rows, err := database.Query("select word, translate from words where name = ? and word = ?", r.Name, r.Text)
-	if err != nil {
-		fmt.Print("\033[1;`34mError Translate Word 2\033[0m\n")
-		return err
-	}
-	err = SendWords(rows, r.Chat_id)
-	if err != nil {
-		return err
-	}
-	fmt.Print("\033[1;34mTranslate Word Ok\033[0m\n")
-	return nil
-}
-
 func SendWords(rows *sql.Rows, chat_id int) error {
 	var message string
 
@@ -69,8 +50,10 @@ func SendWords(rows *sql.Rows, chat_id int) error {
 	if message == "" {
 		message += "Hmmmmm I think that you wrong"
 	}
-	SendMessage(message, chat_id)
-	fmt.Print("\033[1;34msendWords Ok\033[0m\n")
+	err := SendMessage(message, chat_id)
+	if log.CheckErr(err) {
+		return err
+	}
 	return nil
 }
 
@@ -101,16 +84,13 @@ func SetButton(chat_id int) error {
 	m.Text = "set keyboard"
 
 	buf, err := json.Marshal(m)
-	if err != nil {
-		fmt.Print("\033[1;34mSet Button\033[0m\n")
+	if log.CheckErr(err) {
 		return err
 	}
 	_, err = http.Post(botStruct.Url+botStruct.Token+"/sendMessage", "application/json", bytes.NewBuffer(buf))
-	if err != nil {
-		fmt.Print("\033[1;34mSet Button\033[0m\n")
+	if log.CheckErr(err) {
 		return err
 	}
-	fmt.Print("\033[1;34mSet Button Ok\033[0m\n")
 	return nil
 }
 
@@ -120,15 +100,12 @@ func SendMessage(message string, chat_id int) error {
 	m.Text = message
 
 	buf, err := json.Marshal(m)
-	if err != nil {
-		fmt.Print("\033[1;34mSend Message\033[0m\n")
+	if log.CheckErr(err) {
 		return err
 	}
 	_, err = http.Post(botStruct.Url+botStruct.Token+"/sendMessage", "application/json", bytes.NewBuffer(buf))
-	if err != nil {
-		fmt.Print("\033[1;34mSend Message\033[0m\n")
+	if log.CheckErr(err) {
 		return err
 	}
-	fmt.Print("\033[1;34mSend Message Ok\033[0m\n")
 	return nil
 }

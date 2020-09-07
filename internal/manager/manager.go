@@ -2,12 +2,14 @@ package manager
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
+	"github.com/vstruk01/telegram_bot/internal/commands"
 	sends "github.com/vstruk01/telegram_bot/internal/sends"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
 )
@@ -64,17 +66,15 @@ func GetMessage(offset *int) (RestResponse, error) {
 	return restResponse, nil
 }
 
-//
 func GetUpdate(master *botStruct.Master) {
 	var r botStruct.Request
 	r.OpenDb = master.OpenDb
 	for {
+		fmt.Println("hello0")
 		rest, err := GetMessage(&master.Offset)
-
 		if log.CheckErr(err) || len(rest.Result) == 0 {
 			continue
 		}
-
 		for _, update := range rest.Result {
 			r.Text = update.Message.Text
 			r.Name = update.Message.User.Username
@@ -88,12 +88,16 @@ func GetUpdate(master *botStruct.Master) {
 			r.Ch = master.Routines[r.Chat_id]
 			function, ok := master.Commands[r.Text]
 			if ok {
+				fmt.Println("hello1")
+				log.Info.Println("hello error")
 				go function(r)
 				continue
 			}
 			if len(r.Ch.Done) != 0 {
+				fmt.Println("hello1")
+				log.Info.Println("hello error")
 				<-r.Ch.Done
-				// go Translate(r)
+				go commands.Translate(r)
 				continue
 			}
 			r.Ch.C <- r.Text
@@ -108,7 +112,6 @@ func CheckUser(r botStruct.Request) error {
 	if log.CheckErr(err) {
 		return err
 	}
-
 	if rows.Next() {
 		err = rows.Scan(&n)
 		err = rows.Close()
@@ -125,7 +128,6 @@ func CheckUser(r botStruct.Request) error {
 		sends.SetButton(r.Chat_id)
 		return nil
 	}
-	log.Info.Println("\033[1;34mCheck User Ok\033[0m")
 	return nil
 }
 
