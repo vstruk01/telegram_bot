@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"github.com/vstruk01/telegram_bot/internal/struct"
-	_ "github.com/mattn/go-sqlite3"
-)
 
+	_ "github.com/mattn/go-sqlite3"
+	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
+)
 
 type KeyboardButton struct {
 	Text string `json:"text"`
@@ -42,7 +42,7 @@ func TranslateWord(r botStruct.Request) error {
 	}
 	rows, err := database.Query("select word, translate from words where name = ? and word = ?", r.Name, r.Text)
 	if err != nil {
-		fmt.Print("\033[1;34mError Translate Word 2\033[0m\n")
+		fmt.Print("\033[1;`34mError Translate Word 2\033[0m\n")
 		return err
 	}
 	err = SendWords(rows, r.Chat_id)
@@ -93,7 +93,7 @@ func SetButton(chat_id int) error {
 	buttonAll[2] = buttonThree
 	buttonFour[0].Text = "DeleteWord"
 	buttonFour[1].Text = "AddWord"
-	buttonAll[3] = buttonThree
+	buttonAll[3] = buttonFour
 	m.Reply_markup.Keyboard = buttonAll
 	m.Reply_markup.Resize_keyboard = true
 	m.Reply_markup.One_time_keyboard = true
@@ -105,7 +105,7 @@ func SetButton(chat_id int) error {
 		fmt.Print("\033[1;34mSet Button\033[0m\n")
 		return err
 	}
-	_, err = http.Post("https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/sendMessage", "application/json", bytes.NewBuffer(buf))
+	_, err = http.Post(botStruct.Url+botStruct.Token+"/sendMessage", "application/json", bytes.NewBuffer(buf))
 	if err != nil {
 		fmt.Print("\033[1;34mSet Button\033[0m\n")
 		return err
@@ -124,7 +124,7 @@ func SendMessage(message string, chat_id int) error {
 		fmt.Print("\033[1;34mSend Message\033[0m\n")
 		return err
 	}
-	_, err = http.Post("https://api.telegram.org/bot1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8/sendMessage", "application/json", bytes.NewBuffer(buf))
+	_, err = http.Post(botStruct.Url+botStruct.Token+"/sendMessage", "application/json", bytes.NewBuffer(buf))
 	if err != nil {
 		fmt.Print("\033[1;34mSend Message\033[0m\n")
 		return err

@@ -11,13 +11,62 @@ import (
 )
 
 func CommandDeleteWord(r botStruct.Request) {
+	err := sends.SendMessage("Enter please\nword for delete", r.Chat_id)
+	if err != nil {
+		fmt.Print("\033[1;32mError Word Delete = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
+		return
+	}
+	Word := <- r.Ch.C
+	stmt, err := r.OpenDb.Prepare("DELETE FROM words WHERE word = ?")
+	if err != nil {
+		fmt.Print("\033[1;32mError Word Add = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
+		return
+	}
+	_, err = stmt.Exec(Word)
+	if err != nil {
+		fmt.Print("\033[1;32mError Word Add = ", err.Error(), "\033[0m\n")
+	}
+	r.Ch.Done <- true
+}
 
+func CommandAddWord(r botStruct.Request) {
+	err := sends.SendMessage("Enter please\nWord-Translate", r.Chat_id)
+	if err != nil {
+		fmt.Print("\033[1;32mError Word Add = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
+		return
+	}
+
+	words := strings.Split(<- r.Ch.C, "-")
+	if len(words) != 2 {
+		err := sends.SendMessage("Hmmm what wrong ?", r.Chat_id)
+		if err != nil {
+			fmt.Print("\033[1;32mError Word Add = ", err.Error(), "\033[0m\n")
+		}
+		r.Ch.Done <- true
+		return
+	}
+	stmt, err := r.OpenDb.Prepare("INSERT INTO words (word, translate, ok) VALUES(?, ?, ?)")
+	if err != nil {
+		fmt.Print("\033[1;32mError Word Add = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
+		return
+	}
+	_, err = stmt.Exec(words[0], words[1], 0)
+	if err != nil {
+		fmt.Print("\033[1;32mError Word Add = ", err.Error(), "\033[0m\n")
+	}
+	r.Ch.Done <- true
 }
 
 func CommandRepeatKnow(r botStruct.Request) {
+	r.Ch.Done <- true
 }
 
 func CommandRepeatNew(r botStruct.Request) {
+	r.Ch.Done <- true
 }
 
 func CommandWordNew(r botStruct.Request) {
@@ -33,20 +82,23 @@ func CommandWordKnow(r botStruct.Request) {
 	var translates []string
 
 	fmt.Print("\033[1;34mWait Word\033[0m\n")
-	word = <-r.C
+	word = <-r.Ch.C
 	fmt.Print("\033[1;34mGet Word Yes\033[0m\n")
 	rows, err := r.OpenDb.Query("select translate from words where word = ?", word)
 	if err != nil {
 		fmt.Print("\033[1;32mError WordKnow = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
 		return
 	}
 	if !rows.Next() {
 		sends.SendMessage("Sorry I do not find this word", r.Chat_id)
+		r.Ch.Done <- true
 		return
 	}
 	err = rows.Scan(&translate)
 	if err != nil {
 		fmt.Print("\033[1;32mError WordKnow = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
 		return
 	}
 	rows.Close()
@@ -54,7 +106,7 @@ func CommandWordKnow(r botStruct.Request) {
 	translates = strings.Split(translate, ",")
 	sends.SendMessage("Enter translate of this word", r.Chat_id)
 	fmt.Print("\033[1;34mWait Answer\033[0m\n")
-	answer = <-r.C
+	answer = <-r.Ch.C
 	fmt.Print("\033[1;34mGet Answer Yes\033[0m\n")
 	for _, translate = range translates {
 		if translate == answer {
@@ -64,26 +116,31 @@ func CommandWordKnow(r botStruct.Request) {
 			if err != nil {
 				fmt.Print("\033[1;32mError WordKnow = ", err.Error(), "\033[0m\n")
 			}
+			r.Ch.Done <- true
 			return
 		}
 	}
 	fmt.Print("\033[1;34mNot Nice\033[0m\n")
 	sends.SendMessage("You can not lie to me", r.Chat_id)
+	r.Ch.Done <- true
 }
 
 func CommandListNew(r botStruct.Request) {
 	database, err := sql.Open("sqlite3", "./words.db")
 	if err != nil {
 		fmt.Print("\033[1;32mError ListNew = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
 		return
 	}
 	rows, err := database.Query("select word, translate from words where name = ? and ok = 0", r.Name)
 	if err != nil {
 		fmt.Print("\033[1;32mError ListNew = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
 		return
 	}
 	sends.SendWords(rows, r.Chat_id)
 	fmt.Print("\033[1;34mlistNew Ok\033[0m\n")
+	r.Ch.Done <- true
 }
 
 func CommandListKnow(r botStruct.Request) {
@@ -95,10 +152,12 @@ func CommandListKnow(r botStruct.Request) {
 	rows, err := database.Query("select word, translate from words where name = ? and ok > 0", r.Name)
 	if err != nil {
 		fmt.Print("\033[1;32mError listKnow = ", err.Error(), "\033[0m\n")
+		r.Ch.Done <- true
 		return
 	}
 	sends.SendWords(rows, r.Chat_id)
 	fmt.Print("\033[1;34mlistKnow Ok\033[0m\n")
+	r.Ch.Done <- true
 }
 
 func InsertWord(name string, words []string) error {
@@ -138,4 +197,10 @@ func CommandStart(r botStruct.Request) {
 	if err != nil {
 		fmt.Print("\033[1;32mError Command Start = ", err.Error(), "\033[0m\n")
 	}
+	r.Ch.Done <- true
+}
+
+
+func Translate(r botStruct.Request) {
+	
 }

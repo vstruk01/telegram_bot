@@ -13,11 +13,5 @@ func main() {
 		fmt.Println("\033[1;32mError = ", err.Error(), "\033[0m")
 		return
 	}
-
-	for {
-		err = manager.GetUpdate(master)
-		if err != nil {
-			fmt.Println("\033[1;32mError = ", err.Error(), "\033[0m")
-		}
-	}
+	manager.GetUpdate(master)
 }
