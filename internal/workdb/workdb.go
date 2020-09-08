@@ -24,7 +24,26 @@ func GetWords() bool {
 	return true
 }
 
-func GetWord(db botStruct.Request_db) bool {
+func GetTranslate(db botStruct.RequestDb) *string {
+	rows, err := db.Db.Query("select translate from words where name = ? and word = ?", db.Name, db.Word)
+	if err != nil {
+		log.Error.Println(err.Error())
+		return nil
+	}
+	transaltes := new(string)
+	var translate string;
+	for rows.Next() {
+		rows.Scan(&translate)
+		*transaltes += " " + translate
+	}
+	if *transaltes == "" {
+		return nil
+	}
+	*transaltes += " "
+	return transaltes
+}
+
+func GetWord(db botStruct.RequestDb) bool {
 	rows, err := db.Db.Query("SELECT word translate FROM words WHERE word = ? AND translate = ? AND name = ?", db.Word, db.Translate, db.Name)
 	if err != nil {
 		log.Error.Println(err.Error())
@@ -51,7 +70,7 @@ func DeleteWord(name string, word string, translate string, db *sql.DB) bool {
 	return true
 }
 
-func AddWord(db botStruct.Request_db) bool {
+func AddWord(db botStruct.RequestDb) bool {
 	stmt, err := db.Db.Prepare("INSERT INTO words (name, word, translate, ok) VALUES(?, ?, ?, ?)")
 	if err != nil {
 		log.Error.Println(err.Error())

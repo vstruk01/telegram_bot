@@ -7,7 +7,7 @@ var (
 	Token string = "1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8" // * your token of telegram bot
 )
 
-type Request_db struct {
+type RequestDb struct {
 	Name      string
 	Word      string
 	Translate string
