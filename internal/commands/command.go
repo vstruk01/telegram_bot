@@ -10,30 +10,34 @@ import (
 )
 
 func CommandDeleteWord(r botStruct.Request) {
-	err := sends.SendMessage("Enter word for delete", r.Chat_id)
+	log.Info.Print("Command Delete Word\n\n")
+	r.Ch.Done <- true
+	err := sends.SendMessage("Enter word for delete by example\nWord-Translate", r.Chat_id)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	Word := <-r.Ch.C
-	stmt, err := r.OpenDb.Prepare("DELETE FROM words WHERE word = ?")
+	words := strings.Split(Word, "-")
+	stmt, err := r.OpenDb.Prepare("DELETE FROM words WHERE word = ? and translate = ?")
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
-	_, err = stmt.Exec(Word)
+	_, err = stmt.Exec(words[0], words[1])
 	log.CheckErr(err)
-	r.Ch.Done <- true
+	<-r.Ch.Done
 }
 
 func CommandAddWord(r botStruct.Request) {
-	log.Info.Println("Command Add Word")
+	log.Info.Print("Command Add Word\n\n")
+	r.Ch.Done <- true
 	err := sends.SendMessage("Enter by example\nWord-Translate", r.Chat_id)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 
@@ -44,53 +48,69 @@ func CommandAddWord(r botStruct.Request) {
 		if err != nil {
 			log.Error.Println(err.Error())
 		}
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	rows, err := r.OpenDb.Query("select word translate from words where word = ? and translate = ? ", words[0], words[1])
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	if rows.Next() {
 		sends.SendMessage("Sorry this word was writen", r.Chat_id)
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	rows.Close()
 	stmt, err := r.OpenDb.Prepare("INSERT INTO words (name, word, translate, ok) VALUES(?, ?, ?, ?)")
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	_, err = stmt.Exec(r.Name, words[0], words[1], 0)
 	log.Info.Println("End Add Word")
 	sends.SendMessage("Word Wrote", r.Chat_id)
-	r.Ch.Done <- true
+	<-r.Ch.Done
 }
 
 func CommandRepeatKnow(r botStruct.Request) {
 	log.Info.Println("Command Repeat Know")
 	r.Ch.Done <- true
+	<-r.Ch.Done
 }
 
 func CommandRepeatNew(r botStruct.Request) {
 	log.Info.Println("Command Repeat New")
+	<-r.Ch.Done
 	r.Ch.Done <- true
 }
 
-func CommandWordNew(r botStruct.Request) {
-	log.Info.Println("Command Word New")
-	err := sends.SendMessage("Enter Word Please", r.Chat_id)
-	if err != nil {
-		log.Error.Println(err.Error())
-	}
+func CommandHelp(r botStruct.Request) {
+	message := "/start     - початок роботи з ботом\n"
+	message += "/help      - показа список команд\n"
+	message += "AddWord    - додати слово або переклад\n"
+	message += "DeleteWord - видалити слово\n"
+	message += "WordKnow   - позначити слово як засвоєне\n"
+	message += "RepeatNew  - повторити не засвоєних слова\n"
+	message += "RepeatKnow - повторити засвоєні слова\n"
+	message += "ListNew    - показати список не засвоєних слів\n"
+	message += "ListKnow   - показати список засвоєних слів\n"
+	sends.SendMessage(message, r.Chat_id)
 }
 
+// func CommandWordNew(r botStruct.Request) {
+// 	log.Info.Println("Command Word New")
+// 	err := sends.SendMessage("Enter Word Please", r.Chat_id)
+// 	if err != nil {
+// 		log.Error.Println(err.Error())
+// 	}
+// }
+
 func CommandWordKnow(r botStruct.Request) {
-	log.Info.Println("Command Word Know")
+	log.Info.Print("Command Word Know\n\n")
+	r.Ch.Done <- true
 	err := sends.SendMessage("Enter Word Please", r.Chat_id)
 	var word, translate, answer string
 
@@ -98,20 +118,20 @@ func CommandWordKnow(r botStruct.Request) {
 	rows, err := r.OpenDb.Query("select translate from words where word = ?", word)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	sends.SendMessage("Enter translate of this word", r.Chat_id)
 	answer = <-r.Ch.C
 	if !rows.Next() {
 		sends.SendMessage("Sorry I did not find this word", r.Chat_id)
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	err = rows.Scan(&translate)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	if translate == answer {
@@ -124,14 +144,14 @@ func CommandWordKnow(r botStruct.Request) {
 		if err != nil {
 			log.Error.Println(err.Error())
 		}
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	for rows.Next() {
 		err = rows.Scan(&translate)
 		if err != nil {
 			log.Error.Println(err.Error())
-			r.Ch.Done <- true
+			<-r.Ch.Done
 			return
 		}
 		if translate == answer {
@@ -144,7 +164,7 @@ func CommandWordKnow(r botStruct.Request) {
 			if err != nil {
 				log.Error.Println(err.Error())
 			}
-			r.Ch.Done <- true
+			<-r.Ch.Done
 			return
 		}
 	}
@@ -153,17 +173,18 @@ func CommandWordKnow(r botStruct.Request) {
 		log.Error.Println(err.Error())
 	}
 	sends.SendMessage("You can not lie to me", r.Chat_id)
-	r.Ch.Done <- true
+	<-r.Ch.Done
 }
 
 func CommandListNew(r botStruct.Request) {
-	log.Info.Println("Command List New")
+	log.Info.Print("Command List New\n\n")
+	r.Ch.Done <- true
 	m_words := make(map[string][]string)
 	var word, translate, message string
 
 	rows, err := r.OpenDb.Query("select word, translate from words where name = ? and ok = 0", r.Name)
 	if log.CheckErr(err) {
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	for rows.Next() {
@@ -183,38 +204,35 @@ func CommandListNew(r botStruct.Request) {
 	err = sends.SendMessage(message, r.Chat_id)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
-		return
 	}
-	r.Ch.Done <- true
+	<-r.Ch.Done
 }
 
 func Translate(r botStruct.Request) {
-	log.Info.Println("Translate")
+	log.Info.Print("Translate\n\n")
+	r.Ch.Done <- true
 	rows, err := r.OpenDb.Query("select word, translate from words where name = ? and word = ?", r.Name, r.Text)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	err = sends.SendWords(rows, r.Chat_id)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
-		return
 	}
-	r.Ch.Done <- true
-	return
+	<-r.Ch.Done
 }
 
 func CommandListKnow(r botStruct.Request) {
 	log.Info.Println("Command List Know")
+	r.Ch.Done <- true
 	m_words := make(map[string][]string)
 	var word, translate, message string
 
 	rows, err := r.OpenDb.Query("select word, translate from words where name = ? and ok > 0", r.Name)
 	if log.CheckErr(err) {
-		r.Ch.Done <- true
+		<-r.Ch.Done
 		return
 	}
 	for rows.Next() {
@@ -234,15 +252,14 @@ func CommandListKnow(r botStruct.Request) {
 	err = sends.SendMessage(message, r.Chat_id)
 	if err != nil {
 		log.Error.Println(err.Error())
-		r.Ch.Done <- true
-		return
 	}
-	r.Ch.Done <- true
+	<-r.Ch.Done
 }
 
 func CommandStart(r botStruct.Request) {
 	log.Info.Println("Command Start")
+	r.Ch.Done <- true
 	err := sends.SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
 	log.CheckErr(err)
-	r.Ch.Done <- true
+	<-r.Ch.Done
 }

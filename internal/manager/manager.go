@@ -55,6 +55,10 @@ func GetMessage(offset *int) (RestResponse, error) {
 		return RestResponse{}, err
 	}
 
+	if restResponse.Ok == false {
+		http.Get(botStruct.Url + botStruct.Token + "/setWebhook")
+	}
+
 	if len(restResponse.Result) == 0 {
 		return RestResponse{}, nil
 	}
@@ -80,14 +84,20 @@ func GetUpdate(master *botStruct.Master) {
 			r.Text = update.Message.Text
 			r.Name = update.Message.User.Username
 			r.Chat_id = update.Message.Chat.Id
-			log.Info.Println("\n\033[1;34mName:\033[0m\t\t", r.Name,
-				"\n\033[1;34mChat Id:\033[0m\t", r.Chat_id,
-				"\n\033[1;34mWrote:\033[0m\t\t", r.Text)
+			log.Info.Println("\nName:\t\t", r.Name,
+				"\nChat Id:\t", r.Chat_id,
+				"\nWrote:\t\t", r.Text)
 			if CheckUser(r) != nil {
 				log.Error.Println(err.Error())
 				continue
 			}
 			r.Ch = master.Routines[r.Chat_id]
+			if len(r.Ch.Done) != 0 {
+				if len(r.Ch.C) == 0 {
+					r.Ch.C <- r.Text
+				}
+				continue
+			}
 			function, ok := master.Commands[r.Text]
 			if ok {
 				if len(r.Ch.Done) != 0 {
@@ -96,12 +106,10 @@ func GetUpdate(master *botStruct.Master) {
 				go function(r)
 				continue
 			}
-			if len(r.Ch.Done) != 0 {
-				<-r.Ch.Done
+			if len(r.Ch.Done) == 0 {
 				go commands.Translate(r)
 				continue
 			}
-			r.Ch.C <- r.Text
 		}
 	}
 }

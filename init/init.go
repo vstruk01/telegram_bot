@@ -19,10 +19,11 @@ func InitAll() (*botStruct.Master, error) {
 	// * create map of handlers
 	master.Commands = make(map[string]func(botStruct.Request))
 	master.HandeFunc("/start", commands.CommandStart)
+	master.HandeFunc("/help", commands.CommandHelp)
 	master.HandeFunc("RepeatKnow", commands.CommandRepeatKnow)
 	master.HandeFunc("ListKnow", commands.CommandListKnow)
 	master.HandeFunc("WordKnow", commands.CommandWordKnow)
-	master.HandeFunc("WordNew", commands.CommandWordNew)
+	// master.HandeFunc("WordNew", commands.CommandWordNew)
 	master.HandeFunc("ListNew", commands.CommandListNew)
 	master.HandeFunc("RepeatNew", commands.CommandRepeatNew)
 	master.HandeFunc("DeleteWord", commands.CommandDeleteWord)
@@ -55,7 +56,7 @@ func InitAll() (*botStruct.Master, error) {
 }
 
 func createDB() (*sql.DB, error) {
-	database, err := sql.Open("sqlite3", "./words.db")
+	database, err := sql.Open("sqlite3", "./info/words.db")
 	if log.CheckErr(err) {
 		return nil, err
 	}

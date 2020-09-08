@@ -48,7 +48,7 @@ func SendWords(rows *sql.Rows, chat_id int) error {
 		message += "\n"
 	}
 	if message == "" {
-		message += "Hmmmmm I think that you wrong"
+		message += "I do not know this word"
 	}
 	err := SendMessage(message, chat_id)
 	if err != nil {
@@ -65,18 +65,18 @@ func SetButton(chat_id int) error {
 	buttonOne := make([]KeyboardButton, 2)
 	buttonTwo := make([]KeyboardButton, 2)
 	buttonThree := make([]KeyboardButton, 2)
-	buttonFour := make([]KeyboardButton, 2)
-	buttonOne[0].Text = "RepeatNew"
-	buttonOne[1].Text = "RepeatKnow"
-	buttonAll[0] = buttonOne
-	buttonTwo[0].Text = "WordNew"
-	buttonTwo[1].Text = "WordKnow"
-	buttonAll[1] = buttonTwo
+	buttonFour := make([]KeyboardButton, 1)
+	buttonOne[0].Text = "AddWord"
+	buttonOne[1].Text = "DeleteWord"
+	buttonTwo[0].Text = "RepeatNew"
+	buttonTwo[1].Text = "RepeatKnow"
 	buttonThree[0].Text = "ListNew"
 	buttonThree[1].Text = "ListKnow"
+	buttonFour[0].Text = "WordKnow"
+	// buttonTwo[1].Text = "WordNew"
+	buttonAll[0] = buttonOne
+	buttonAll[1] = buttonTwo
 	buttonAll[2] = buttonThree
-	buttonFour[0].Text = "DeleteWord"
-	buttonFour[1].Text = "AddWord"
 	buttonAll[3] = buttonFour
 	m.Reply_markup.Keyboard = buttonAll
 	m.Reply_markup.Resize_keyboard = true
