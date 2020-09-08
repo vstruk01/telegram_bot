@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -10,8 +9,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	"github.com/vstruk01/telegram_bot/internal/commands"
-	sends "github.com/vstruk01/telegram_bot/internal/sends"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
+	db "github.com/vstruk01/telegram_bot/internal/workdb"
 )
 
 type Chat struct {
@@ -36,6 +35,51 @@ type Update struct {
 type RestResponse struct {
 	Ok     bool     `json:"ok"`
 	Result []Update `json:"result"`
+}
+
+func GetUpdate(master *botStruct.Master) {
+	var r botStruct.Request
+	r.OpenDb = master.OpenDb
+	for {
+		rest, err := GetMessage(&master.Offset)
+		if err != nil || len(rest.Result) == 0 {
+			if err != nil {
+				log.Error.Println(err.Error())
+			}
+			continue
+		}
+		for _, update := range rest.Result {
+			r.Text = update.Message.Text
+			r.Name = update.Message.User.Username
+			r.Chat_id = update.Message.Chat.Id
+			log.Info.Println("\nName:\t\t", r.Name,
+				"\nChat Id:\t", r.Chat_id,
+				"\nWrote:\t\t", r.Text)
+			if db.CheckUser(master, r.Name, r.Chat_id) != nil {
+				log.Error.Println(err.Error())
+				continue
+			}
+			r.Ch = master.Routines[r.Chat_id]
+			if len(r.Ch.Done) != 0 {
+				if len(r.Ch.C) == 0 {
+					r.Ch.C <- r.Text
+				}
+				continue
+			}
+			function, ok := master.GetCommand(r.Text)
+			if ok {
+				if len(r.Ch.Done) != 0 {
+					<-r.Ch.Done
+				}
+				go function(r)
+				continue
+			}
+			if len(r.Ch.Done) == 0 {
+				go commands.Translate(r)
+				continue
+			}
+		}
+	}
 }
 
 func GetMessage(offset *int) (RestResponse, error) {
@@ -68,93 +112,4 @@ func GetMessage(offset *int) (RestResponse, error) {
 		*offset = restResponse.Result[0].Update_id + 1
 	}
 	return restResponse, nil
-}
-
-func GetUpdate(master *botStruct.Master) {
-	var r botStruct.Request
-	r.OpenDb = master.OpenDb
-	for {
-		rest, err := GetMessage(&master.Offset)
-		if err != nil || len(rest.Result) == 0 {
-			if err != nil {
-				log.Error.Println(err.Error())
-			}
-			continue
-		}
-		for _, update := range rest.Result {
-			r.Text = update.Message.Text
-			r.Name = update.Message.User.Username
-			r.Chat_id = update.Message.Chat.Id
-			log.Info.Println("\nName:\t\t", r.Name,
-				"\nChat Id:\t", r.Chat_id,
-				"\nWrote:\t\t", r.Text)
-			if CheckUser(master, r.Name, r.Chat_id) != nil {
-				log.Error.Println(err.Error())
-				continue
-			}
-			r.Ch = master.Routines[r.Chat_id]
-			if len(r.Ch.Done) != 0 {
-				if len(r.Ch.C) == 0 {
-					r.Ch.C <- r.Text
-				}
-				continue
-			}
-			function, ok := master.GetCommand(r.Text)
-			if ok {
-				if len(r.Ch.Done) != 0 {
-					<-r.Ch.Done
-				}
-				go function(r)
-				continue
-			}
-			if len(r.Ch.Done) == 0 {
-				go commands.Translate(r)
-				continue
-			}
-		}
-	}
-}
-
-func CheckUser(master *botStruct.Master, name string, id int) error {
-	var n string
-
-	rows, err := master.OpenDb.Query("select name from users WHERE name = ? and chat_id = ?", name, id)
-	if err != nil {
-		log.Error.Println(err.Error())
-		return err
-	}
-	if rows.Next() {
-		err = rows.Scan(&n)
-		err = rows.Close()
-		if err != nil {
-			log.Error.Println(err.Error())
-			return err
-		}
-	} else {
-		err = AddUser(master.OpenDb, name, id)
-		if err != nil {
-			log.Error.Println(err.Error())
-			return err
-		}
-		Ch := new(botStruct.Channels)
-		Ch.C = make(chan string, 1)
-		Ch.Done = make(chan bool, 1)
-		master.Routines[id] = Ch
-		sends.SetButton(id)
-	}
-	return nil
-}
-
-func AddUser(db *sql.DB, name string, id int) error {
-	statement, err := db.Prepare("insert into users (name, chat_id)values(?, ?)")
-	if err != nil {
-		log.Error.Println(err.Error())
-		return err
-	}
-	_, err = statement.Exec(name, id)
-	if err != nil {
-		log.Error.Println(err.Error())
-		return err
-	}
-	return nil
 }
