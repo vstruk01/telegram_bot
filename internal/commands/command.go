@@ -7,33 +7,31 @@ import (
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	sends "github.com/vstruk01/telegram_bot/internal/sends"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
+	db "github.com/vstruk01/telegram_bot/internal/workdb"
 )
 
 func CommandDeleteWord(r botStruct.Request) {
-	log.Info.Print("Command Delete Word\n\n")
 	r.Ch.Done <- true
+	log.Info.Print("Command Delete Word\n\n")
 	err := sends.SendMessage("Enter word for delete by example\nWord-Translate", r.Chat_id)
 	if err != nil {
-		log.Error.Println(err.Error())
 		<-r.Ch.Done
 		return
 	}
-	Word := <-r.Ch.C
-	words := strings.Split(Word, "-")
-	stmt, err := r.OpenDb.Prepare("DELETE FROM words WHERE word = ? and translate = ?")
-	if err != nil {
-		log.Error.Println(err.Error())
+	word := <-r.Ch.C
+	words := strings.Split(word, "-")
+	if !db.DeleteWord(r.Name, words[0], words[1], r.OpenDb) {
 		<-r.Ch.Done
 		return
 	}
-	_, err = stmt.Exec(words[0], words[1])
-	log.CheckErr(err)
+	sends.SendMessage("Successfully Deleted", r.Chat_id)
+	log.Info.Print("Command Delete Word Ok\n\n")
 	<-r.Ch.Done
 }
 
 func CommandAddWord(r botStruct.Request) {
-	log.Info.Print("Command Add Word\n\n")
 	r.Ch.Done <- true
+	log.Info.Print("Command Add Word\n\n")
 	err := sends.SendMessage("Enter by example\nWord-Translate", r.Chat_id)
 	if err != nil {
 		log.Error.Println(err.Error())
@@ -41,37 +39,23 @@ func CommandAddWord(r botStruct.Request) {
 		return
 	}
 
-	for_split := <-r.Ch.C
-	words := strings.Split(for_split, "-")
+	words := strings.Split(<-r.Ch.C, "-")
 	if len(words) != 2 {
-		err := sends.SendMessage("Hmmm what wrong ?", r.Chat_id)
-		if err != nil {
-			log.Error.Println(err.Error())
-		}
+		sends.SendMessage("Hmmm what wrong ?", r.Chat_id)
 		<-r.Ch.Done
 		return
 	}
-	rows, err := r.OpenDb.Query("select word translate from words where word = ? and translate = ? ", words[0], words[1])
-	if err != nil {
-		log.Error.Println(err.Error())
-		<-r.Ch.Done
-		return
-	}
-	if rows.Next() {
+	if !db.GetWord(botStruct.Request_db{r.Name, words[0], words[1], r.Chat_id, r.OpenDb}) {
 		sends.SendMessage("Sorry this word was writen", r.Chat_id)
 		<-r.Ch.Done
 		return
 	}
-	rows.Close()
-	stmt, err := r.OpenDb.Prepare("INSERT INTO words (name, word, translate, ok) VALUES(?, ?, ?, ?)")
-	if err != nil {
-		log.Error.Println(err.Error())
+	if !db.AddWord(botStruct.Request_db{r.Name, words[0], words[1], r.Chat_id, r.OpenDb}) {
 		<-r.Ch.Done
 		return
 	}
-	_, err = stmt.Exec(r.Name, words[0], words[1], 0)
-	log.Info.Println("End Add Word")
 	sends.SendMessage("Word Wrote", r.Chat_id)
+	log.Info.Print("Command Add Word Ok\n\n")
 	<-r.Ch.Done
 }
 

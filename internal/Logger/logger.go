@@ -12,7 +12,7 @@ var (
 )
 
 func InitLog() {
-	file, err := os.OpenFile("./info/info.log", os.O_RDWR|os.O_CREATE, 0777)
+	file, err := os.OpenFile("./info/info.log", os.O_APPEND|os.O_RDWR|os.O_CREATE, 0777)
 	if err != nil {
 		log.Println(err.Error())
 		Info = log.New(os.Stdout, "\033[1;34mINFO: ", log.Ldate|log.Ltime|log.Lshortfile)

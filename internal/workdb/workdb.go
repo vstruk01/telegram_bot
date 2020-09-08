@@ -24,13 +24,40 @@ func GetWords() bool {
 	return true
 }
 
-func DeleteUser(name string, word string, translate string, db *sql.DB) bool {
-	stmt, err := db.Prepare("DELETE FROM words WHERE name = ? and word = ? and translate = ?")
+func GetWord(db botStruct.Request_db) bool {
+	rows, err := db.Db.Query("SELECT word translate FROM words WHERE word = ? AND translate = ? AND name = ?", db.Word, db.Translate, db.Name)
+	if err != nil {
+		log.Error.Println(err.Error())
+		return false
+	}
+	if rows.Next() {
+		return false
+	}
+	rows.Close()
+	return true
+}
+
+func DeleteWord(name string, word string, translate string, db *sql.DB) bool {
+	stmt, err := db.Prepare("DELETE FROM words WHERE name = ? and word = ? AND translate = ?")
 	if err != nil {
 		log.Error.Println(err.Error())
 		return false
 	}
 	_, err = stmt.Exec(name, word, translate)
+	if err != nil {
+		log.Error.Println(err.Error())
+		return false
+	}
+	return true
+}
+
+func AddWord(db botStruct.Request_db) bool {
+	stmt, err := db.Db.Prepare("INSERT INTO words (name, word, translate, ok) VALUES(?, ?, ?, ?)")
+	if err != nil {
+		log.Error.Println(err.Error())
+		return false
+	}
+	_, err = stmt.Exec(db.Name, db.Word, db.Translate, 0)
 	if err != nil {
 		log.Error.Println(err.Error())
 		return false

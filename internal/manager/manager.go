@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -87,7 +88,7 @@ func GetUpdate(master *botStruct.Master) {
 			log.Info.Println("\nName:\t\t", r.Name,
 				"\nChat Id:\t", r.Chat_id,
 				"\nWrote:\t\t", r.Text)
-			if CheckUser(r) != nil {
+			if CheckUser(master, r.Name, r.Chat_id) != nil {
 				log.Error.Println(err.Error())
 				continue
 			}
@@ -98,7 +99,7 @@ func GetUpdate(master *botStruct.Master) {
 				}
 				continue
 			}
-			function, ok := master.Commands[r.Text]
+			function, ok := master.GetCommand(r.Text)
 			if ok {
 				if len(r.Ch.Done) != 0 {
 					<-r.Ch.Done
@@ -114,10 +115,10 @@ func GetUpdate(master *botStruct.Master) {
 	}
 }
 
-func CheckUser(r botStruct.Request) error {
+func CheckUser(master *botStruct.Master, name string, id int) error {
 	var n string
 
-	rows, err := r.OpenDb.Query("select name from users WHERE name = ? and chat_id = ?", r.Name, r.Chat_id)
+	rows, err := master.OpenDb.Query("select name from users WHERE name = ? and chat_id = ?", name, id)
 	if err != nil {
 		log.Error.Println(err.Error())
 		return err
@@ -130,25 +131,27 @@ func CheckUser(r botStruct.Request) error {
 			return err
 		}
 	} else {
-		err = AddUser(r)
+		err = AddUser(master.OpenDb, name, id)
 		if err != nil {
 			log.Error.Println(err.Error())
 			return err
 		}
-		r.Ch.C = make(chan string, 1)
-		r.Ch.Done = make(chan bool, 1)
-		sends.SetButton(r.Chat_id)
+		Ch := new(botStruct.Channels)
+		Ch.C = make(chan string, 1)
+		Ch.Done = make(chan bool, 1)
+		master.Routines[id] = Ch
+		sends.SetButton(id)
 	}
 	return nil
 }
 
-func AddUser(r botStruct.Request) error {
-	statement, err := r.OpenDb.Prepare("insert into users (name, chat_id)values(?, ?)")
+func AddUser(db *sql.DB, name string, id int) error {
+	statement, err := db.Prepare("insert into users (name, chat_id)values(?, ?)")
 	if err != nil {
 		log.Error.Println(err.Error())
 		return err
 	}
-	_, err = statement.Exec(r.Name, r.Chat_id)
+	_, err = statement.Exec(name, id)
 	if err != nil {
 		log.Error.Println(err.Error())
 		return err
