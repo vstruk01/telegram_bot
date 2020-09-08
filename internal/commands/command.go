@@ -20,6 +20,15 @@ func CommandDeleteWord(r botStruct.Request) {
 	}
 	word := <-r.Ch.C
 	words := strings.Split(word, "-")
+	if len(words) != 2 {
+		sends.SendMessage("Write by Example\nWord-Translate", r.Chat_id)
+		words = strings.Split(<-r.Ch.C, "-")
+		if len(words) != 2 {
+			sends.SendMessage("HoW SMaRT you aRe", r.Chat_id)
+			<-r.Ch.Done
+			return
+		}
+	}
 	if !db.DeleteWord(r.Name, words[0], words[1], r.OpenDb) {
 		<-r.Ch.Done
 		return
@@ -143,14 +152,9 @@ func CommandListNew(r botStruct.Request) {
 	log.Info.Print("Command List New\n\n")
 	r.Ch.Done <- true
 
-	message, ok := db.GetWordsKnow(r)
-	if !ok {
-		<-r.Ch.Done
-		return
-	}
-	err := sends.SendMessage(*message, r.Chat_id)
-	if err != nil {
-		log.Error.Println(err.Error())
+	message, ok := db.GetWordsNew(r)
+	if ok {
+		sends.SendMessage(*message, r.Chat_id)
 	}
 	<-r.Ch.Done
 }
@@ -181,13 +185,8 @@ func CommandListKnow(r botStruct.Request) {
 	r.Ch.Done <- true
 
 	message, ok := db.GetWordsKnow(r)
-	if !ok {
-		<-r.Ch.Done
-		return
-	}
-	err := sends.SendMessage(*message, r.Chat_id)
-	if err != nil {
-		log.Error.Println(err.Error())
+	if ok {
+		sends.SendMessage(*message, r.Chat_id)
 	}
 	<-r.Ch.Done
 }
@@ -195,7 +194,6 @@ func CommandListKnow(r botStruct.Request) {
 func CommandStart(r botStruct.Request) {
 	log.Info.Println("Command Start")
 	r.Ch.Done <- true
-	err := sends.SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
-	log.CheckErr(err)
+	sends.SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
 	<-r.Ch.Done
 }

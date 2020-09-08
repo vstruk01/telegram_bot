@@ -59,7 +59,6 @@ func AddUser(db *sql.DB, name string, id int) error {
 	return nil
 }
 
-
 // * work with words * //
 
 func GetWordsNew(r botStruct.Request) (*string, bool) {

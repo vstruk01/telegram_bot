@@ -20,6 +20,7 @@ func InitAll() (*botStruct.Master, error) {
 	master.Commands = make(map[string]func(botStruct.Request))
 	master.HandeFunc("/start", commands.CommandStart)
 	master.HandeFunc("/help", commands.CommandHelp)
+	master.HandeFunc("/add_word", commands.CommandAddWord)
 	master.HandeFunc("/repeat_know", commands.CommandRepeatKnow)
 	master.HandeFunc("/list_know", commands.CommandListKnow)
 	master.HandeFunc("/word_know", commands.CommandWordKnow)
@@ -28,7 +29,6 @@ func InitAll() (*botStruct.Master, error) {
 	master.HandeFunc("/repeat_new", commands.CommandRepeatNew)
 	master.HandeFunc("/delete_word", commands.CommandDeleteWord)
 	// * handlers for buttom
-	master.HandeFunc("Add_word", commands.CommandAddWord)
 	master.HandeFunc("Repeat_know", commands.CommandRepeatKnow)
 	master.HandeFunc("List_know", commands.CommandListKnow)
 	master.HandeFunc("Word_know", commands.CommandWordKnow)
