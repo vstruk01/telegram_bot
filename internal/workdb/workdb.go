@@ -2,13 +2,13 @@ package workdb
 
 import (
 	"database/sql"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	sends "github.com/vstruk01/telegram_bot/internal/sends"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
 )
-
 
 // * work with users * //
 func GetUsers() bool {
@@ -147,12 +147,15 @@ func DeleteWord(name string, word string, translate string, db *sql.DB) bool {
 }
 
 func AddWord(db botStruct.RequestDb) bool {
+	word := strings.TrimSpace(strings.ToLower(db.Word))
+	translate := strings.TrimSpace(strings.ToLower(db.Translate))
+
 	stmt, err := db.Db.Prepare("INSERT INTO words (name, word, translate, ok) VALUES(?, ?, ?, ?)")
 	if err != nil {
 		log.Error.Println(err.Error())
 		return false
 	}
-	_, err = stmt.Exec(db.Name, db.Word, db.Translate, 0)
+	_, err = stmt.Exec(db.Name, word, translate, 0)
 	if err != nil {
 		log.Error.Println(err.Error())
 		return false

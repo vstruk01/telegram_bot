@@ -18,11 +18,11 @@ func CommandDeleteWord(r botStruct.Request) {
 		<-r.Ch.Done
 		return
 	}
-	word := <-r.Ch.C
+	word := strings.TrimSpace(strings.ToLower(<-r.Ch.C))
 	words := strings.Split(word, "-")
 	if len(words) != 2 {
 		sends.SendMessage("Write by Example\nWord-Translate", r.Chat_id)
-		words = strings.Split(<-r.Ch.C, "-")
+		words = strings.Split(strings.TrimSpace(strings.ToLower(<-r.Ch.C)), "-")
 		if len(words) != 2 {
 			sends.SendMessage("HoW SMaRT you aRe", r.Chat_id)
 			<-r.Ch.Done
@@ -48,10 +48,10 @@ func CommandAddWord(r botStruct.Request) {
 		return
 	}
 
-	words := strings.Split(<-r.Ch.C, "-")
+	words := strings.Split(strings.TrimSpace(strings.ToLower(<-r.Ch.C)), "-")
 	if len(words) != 2 {
 		sends.SendMessage("Write by Example\nWord-Translate", r.Chat_id)
-		words = strings.Split(<-r.Ch.C, "-")
+		words = strings.Split(strings.TrimSpace(strings.ToLower(<-r.Ch.C)), "-")
 		if len(words) != 2 {
 			sends.SendMessage("HoW SMaRT you aRe", r.Chat_id)
 			<-r.Ch.Done
@@ -124,7 +124,7 @@ func CommandWordKnow(r botStruct.Request) {
 		return
 	}
 
-	word := <-r.Ch.C
+	word := strings.TrimSpace(strings.ToLower(<-r.Ch.C))
 	translate := db.GetTranslate(botStruct.RequestDb{
 		Name:      r.Name,
 		Word:      word,
@@ -137,7 +137,7 @@ func CommandWordKnow(r botStruct.Request) {
 		return
 	}
 	sends.SendMessage("Enter translate of this word", r.Chat_id)
-	answer := <-r.Ch.C
+	answer := strings.TrimSpace(strings.ToLower(<-r.Ch.C))
 	if strings.Contains(*translate, " "+answer+" ") {
 		sends.SendMessage("Ok I beleive you", r.Chat_id)
 		db.UpdateWordKnow(r.Name, word, answer, r.OpenDb)
