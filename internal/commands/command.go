@@ -21,7 +21,7 @@ func CommandDeleteWord(r botStruct.Request) {
 	word := strings.TrimSpace(strings.ToLower(<-r.Ch.C))
 	words := strings.Split(word, "-")
 	if len(words) != 2 {
-		sends.SendMessage("Write by Example\nWord-Translate", r.Chat_id)
+		sends.SendMessage("Write by Example for Delete\nWord-Translate", r.Chat_id)
 		words = strings.Split(strings.TrimSpace(strings.ToLower(<-r.Ch.C)), "-")
 		if len(words) != 2 {
 			sends.SendMessage("HoW SMaRT you aRe", r.Chat_id)
@@ -97,13 +97,13 @@ func CommandRepeatNew(r botStruct.Request) {
 func CommandHelp(r botStruct.Request) {
 	message := "/start - start\n"
 	message += "/help - show list of command\n"
-	message += "/AddWord - add word\n"
-	message += "/DeleteWord - delete word\n"
-	message += "/WordKnow - mark as studied\n"
-	message += "/RepeatNew - repeat new words\n"
-	message += "/RepeatKnow - repeat learned words\n"
-	message += "/ListNew - list of new words\n"
-	message += "/ListKnow - list of lerned words\n"
+	message += "/add_word - add word\n"
+	message += "/delete_word - delete word\n"
+	message += "/word_know - mark as studied\n"
+	message += "/repeat_new - repeat new words\n"
+	message += "/repeat_know - repeat learned words\n"
+	message += "/list_new - list of new words\n"
+	message += "/list_know - list of lerned words\n"
 	sends.SendMessage(message, r.Chat_id)
 }
 
@@ -194,6 +194,7 @@ func CommandListKnow(r botStruct.Request) {
 func CommandStart(r botStruct.Request) {
 	log.Info.Println("Command Start")
 	r.Ch.Done <- true
-	sends.SendMessage("Hello dear, how are you ?\nDo you want to learn English ?\nSo let's go", r.Chat_id)
+	// // sends.SendMessage("Hello dear, how are you ?\nDo you feel like to learn English ?\nSo let's go", r.Chat_id)
+	sends.SetButton(r.Chat_id)
 	<-r.Ch.Done
 }

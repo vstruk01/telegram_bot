@@ -6,7 +6,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	"github.com/vstruk01/telegram_bot/internal/commands"
-	"github.com/vstruk01/telegram_bot/internal/sends"
+	// "github.com/vstruk01/telegram_bot/internal/sends"
+	db "github.com/vstruk01/telegram_bot/internal/workdb"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
 )
 
@@ -24,18 +25,17 @@ func InitAll() (*botStruct.Master, error) {
 	master.HandeFunc("/repeat_know", commands.CommandRepeatKnow)
 	master.HandeFunc("/list_know", commands.CommandListKnow)
 	master.HandeFunc("/word_know", commands.CommandWordKnow)
-	// // master.HandeFunc("WordNew", commands.CommandWordNew)
 	master.HandeFunc("/list_new", commands.CommandListNew)
 	master.HandeFunc("/repeat_new", commands.CommandRepeatNew)
 	master.HandeFunc("/delete_word", commands.CommandDeleteWord)
 	// * handlers for buttom
-	master.HandeFunc("Repeat_know", commands.CommandRepeatKnow)
-	master.HandeFunc("List_know", commands.CommandListKnow)
-	master.HandeFunc("Word_know", commands.CommandWordKnow)
-	master.HandeFunc("List_new", commands.CommandListNew)
-	master.HandeFunc("Repeat_new", commands.CommandRepeatNew)
-	master.HandeFunc("Delete_word", commands.CommandDeleteWord)
-	master.HandeFunc("Add_word", commands.CommandAddWord)
+	master.HandeFunc("Repeat Know", commands.CommandRepeatKnow)
+	master.HandeFunc("List Know", commands.CommandListKnow)
+	master.HandeFunc("Word Know", commands.CommandWordKnow)
+	master.HandeFunc("List New", commands.CommandListNew)
+	master.HandeFunc("Repeat New", commands.CommandRepeatNew)
+	master.HandeFunc("Delete Word", commands.CommandDeleteWord)
+	master.HandeFunc("Add Word", commands.CommandAddWord)
 
 	// * initialization other veriables
 	master.Offset = 0
@@ -46,20 +46,16 @@ func InitAll() (*botStruct.Master, error) {
 
 	// * create map of chans for goroutines
 	master.Routines = make(map[int]*botStruct.Channels)
-	rows, err := master.OpenDb.Query("select chat_id from users")
+	users_id, err := db.GetUsersID(master.OpenDb)
 	if err != nil {
 		return nil, err
 	}
-	var id int
-	for rows.Next() {
+	for _, v := range *users_id {
 		var ch botStruct.Channels
-		rows.Scan(&id)
-		sends.SetButton(id)
 		ch.C = make(chan string, 1)
 		ch.Done = make(chan bool, 1)
-		master.Routines[id] = &ch
+		master.Routines[v] = &ch
 	}
-
 	return master, nil
 }
 

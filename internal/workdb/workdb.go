@@ -11,8 +11,18 @@ import (
 )
 
 // * work with users * //
-func GetUsers() bool {
-	return true
+func GetUsersID(db *sql.DB) (*[]int, error) {
+	id_s := new([]int)
+	rows, err := db.Query("SELECT chat_id FROM users")
+	if err != nil {
+		return nil, err
+	}
+	var id int
+	for rows.Next() {
+		rows.Scan(&id)
+		*id_s = append(*id_s, id)
+	}
+	return id_s, nil
 }
 
 func CheckUser(master *botStruct.Master, name string, id int) error {
@@ -101,7 +111,7 @@ func GetWords(r botStruct.Request, rows *sql.Rows) (*string, bool) {
 }
 
 func GetTranslate(db botStruct.RequestDb) *string {
-	rows, err := db.Db.Query("SELECT translate FROM words WHERE name = ? AND word = ?", db.Name, db.Word)
+	rows, err := db.Db.Query("SELECT translate FROM words WHERE name = ? AND word = ?", strings.TrimSpace(strings.ToLower(db.Name)), strings.TrimSpace(strings.ToLower(db.Word)))
 	if err != nil {
 		log.Error.Println(err.Error())
 		return nil

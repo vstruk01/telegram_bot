@@ -66,13 +66,13 @@ func SetButton(chat_id int) error {
 	buttonTwo := make([]KeyboardButton, 2)
 	buttonThree := make([]KeyboardButton, 2)
 	buttonFour := make([]KeyboardButton, 1)
-	buttonOne[0].Text = "Add_word"
-	buttonOne[1].Text = "Delete_word"
-	buttonTwo[0].Text = "Repeat_new"
-	buttonTwo[1].Text = "Repeat_know"
-	buttonThree[0].Text = "List_new"
-	buttonThree[1].Text = "List_know"
-	buttonFour[0].Text = "Word_know"
+	buttonOne[0].Text = "Add Word"
+	buttonOne[1].Text = "Delete Word"
+	buttonTwo[0].Text = "Repeat New"
+	buttonTwo[1].Text = "Repeat Know"
+	buttonThree[0].Text = "List New"
+	buttonThree[1].Text = "List Know"
+	buttonFour[0].Text = "Word Know"
 	// // buttonTwo[1].Text = "WordNew"
 	buttonAll[0] = buttonOne
 	buttonAll[1] = buttonTwo
@@ -82,7 +82,7 @@ func SetButton(chat_id int) error {
 	m.Reply_markup.Resize_keyboard = true
 	m.Reply_markup.One_time_keyboard = true
 	m.Reply_markup.Selective = true
-	m.Text = "set keyboard"
+	m.Text = "Hello dear, how are you ?\nDo you feel like to learn English ?\nSo let's go"
 
 	buf, err := json.Marshal(m)
 	if err != nil {
