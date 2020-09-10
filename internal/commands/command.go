@@ -2,6 +2,10 @@ package commands
 
 import (
 	"strings"
+	"math/rand"
+	"time"
+	"strconv"
+	// "fmt"
 
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
@@ -83,15 +87,91 @@ func CommandAddWord(r botStruct.Request) {
 }
 
 func CommandRepeatKnow(r botStruct.Request) {
-	log.Info.Println("Command Repeat Know")
 	r.Ch.Done <- true
+	log.Info.Println("Command Repeat Know Start")
+	m_words := db.GetWordsKnow(r)
+	if m_words == nil {
+		sends.SendMessage("Ups sorry", r.Chat_id)
+	}
+	var word, translate, answer string
+	var wrong, great int = 0, 0
+	var words []string
+
+	for	k,_ := range *m_words {
+		words = append(words, k)
+	}
+
+	sends.SendMessage("For exit Enter /end\nTranslate next word", r.Chat_id)
+	
+	for {
+		if len(words) <= 0 {
+			sends.SendMessage("Not have words", r.Chat_id)
+			break
+		}
+		rand.Seed(int64(time.Now().Second()))
+		word = words[rand.Intn(len(words))]
+		translate, _ = (*m_words)[word]
+		sends.SendMessage(word + "\nEnter Translate", r.Chat_id)
+		answer = strings.TrimSpace(strings.ToLower(<-r.Ch.C))
+		if answer == "/end" {
+			break	
+		}
+		if strings.Contains(translate, " " + answer + " ") {
+			sends.SendMessage("Well done, continue", r.Chat_id)
+		} else {
+			sends.SendMessage("Next time You do it\nAnswer -> " + translate, r.Chat_id)
+		}
+	}
+	s_great := strconv.Itoa(great)
+	s_wrong := strconv.Itoa(wrong)
+	sends.SendMessage("great = " + s_great + "\nwrong = " + s_wrong, r.Chat_id)
+	log.Info.Println("Command Repeat Know End")
 	<-r.Ch.Done
 }
 
 func CommandRepeatNew(r botStruct.Request) {
-	log.Info.Println("Command Repeat New")
-	<-r.Ch.Done
 	r.Ch.Done <- true
+	log.Info.Println("Command Repeat New Start")
+	m_words := db.GetWordsNew(r)
+	if m_words == nil {
+		sends.SendMessage("Ups sorry", r.Chat_id)
+	}
+	var word, translate, answer string
+	var wrong, great int = 0, 0
+	var words []string
+
+	for	k,_ := range *m_words {
+		words = append(words, k)
+	}
+
+	sends.SendMessage("For exit Enter /end\nTranslate next word", r.Chat_id)
+	
+	for {
+		if len(words) <= 0 {
+			sends.SendMessage("Not have words", r.Chat_id)
+			break
+		}
+		rand.Seed(int64(time.Now().Second()))
+		word = words[rand.Intn(len(words))]
+		translate, _ = (*m_words)[word]
+		sends.SendMessage(word + "\nEnter Translate", r.Chat_id)
+		answer = strings.TrimSpace(strings.ToLower(<-r.Ch.C))
+		if answer == "/end" {
+			break	
+		}
+		if strings.Contains(translate, " " + answer + " ") {
+			sends.SendMessage("Well done, continue", r.Chat_id)
+			great++
+		} else {
+			sends.SendMessage("Next time You do it\nAnswer -> " + translate, r.Chat_id)
+			wrong++
+		}
+	}
+	s_great := strconv.Itoa(great)
+	s_wrong := strconv.Itoa(wrong)
+	sends.SendMessage("great = " + s_great + "\nwrong = " + s_wrong, r.Chat_id)
+	log.Info.Println("Command Repeat New End")
+	<-r.Ch.Done
 }
 
 func CommandHelp(r botStruct.Request) {
@@ -152,9 +232,10 @@ func CommandListNew(r botStruct.Request) {
 	log.Info.Print("Command List New\n\n")
 	r.Ch.Done <- true
 
-	message, ok := db.GetWordsNew(r)
-	if ok {
-		sends.SendMessage(*message, r.Chat_id)
+	m_words := db.GetWordsNew(r)
+	if m_words != nil {
+		s_words := db.MapWordsInStringWords(m_words)
+		sends.SendMessage(*s_words, r.Chat_id)
 	}
 	<-r.Ch.Done
 }
@@ -184,9 +265,10 @@ func CommandListKnow(r botStruct.Request) {
 	log.Info.Println("Command List Know")
 	r.Ch.Done <- true
 
-	message, ok := db.GetWordsKnow(r)
-	if ok {
-		sends.SendMessage(*message, r.Chat_id)
+	m_words := db.GetWordsKnow(r)
+	if m_words != nil {
+		s_words := db.MapWordsInStringWords(m_words)
+		sends.SendMessage(*s_words, r.Chat_id)
 	}
 	<-r.Ch.Done
 }

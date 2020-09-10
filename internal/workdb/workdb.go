@@ -71,47 +71,55 @@ func AddUser(db *sql.DB, name string, id int) error {
 
 // * work with words * //
 
-func GetWordsNew(r botStruct.Request) (*string, bool) {
+func GetWordsNew(r botStruct.Request) *map[string]string {
 	rows, err := r.OpenDb.Query("SELECT word, translate FROM words WHERE name = ? AND ok = 0", r.Name)
 	if err != nil {
 		log.Error.Println(err.Error())
-		return nil, false
+		return nil
 	}
 	return GetWords(r, rows)
 }
 
-func GetWordsKnow(r botStruct.Request) (*string, bool) {
+func GetWordsKnow(r botStruct.Request) *map[string]string {
 	rows, err := r.OpenDb.Query("SELECT word, translate FROM words WHERE name = ? AND ok > 0", r.Name)
 	if err != nil {
 		log.Error.Println(err.Error())
-		return nil, false
+		return nil
 	}
 	return GetWords(r, rows)
 }
 
-func GetWords(r botStruct.Request, rows *sql.Rows) (*string, bool) {
-	m_words := make(map[string][]string)
+func MapWordsInStringWords(m_words *map[string]string) *string {
+	Word := new(string)
+
+	for k, v := range *m_words {
+		*Word += k + " -> " + v + "\n"
+	}
+	if *Word == "" {
+		*Word += "empty :("
+	}
+	return Word
+}
+
+func GetWords(r botStruct.Request, rows *sql.Rows) *map[string]string {
+	m_words := new(map[string]string)
+	*m_words = make(map[string]string)
 	var word, translate string
-	listWords := new(string)
 	for rows.Next() {
 		rows.Scan(&word, &translate)
-		m_words[word] = append(m_words[word], translate)
-	}
-	for k, vs := range m_words {
-		*listWords += k + " -> "
-		for _, v := range vs {
-			*listWords += v + " "
+		_, ok := (*m_words)[word]
+		if ok {
+			(*m_words)[word] += translate + " "
+		} else {
+			(*m_words)[word] = " " + translate + " "
 		}
-		*listWords += "\n"
 	}
-	if *listWords == "" {
-		*listWords += "empty :("
-	}
-	return listWords, true
+	rows.Close()
+	return m_words
 }
 
 func GetTranslate(db botStruct.RequestDb) *string {
-	rows, err := db.Db.Query("SELECT translate FROM words WHERE name = ? AND word = ?", strings.TrimSpace(strings.ToLower(db.Name)), strings.TrimSpace(strings.ToLower(db.Word)))
+	rows, err := db.Db.Query("SELECT translate FROM words WHERE name = ? AND word = ?", db.Name, strings.TrimSpace(strings.ToLower(db.Word)))
 	if err != nil {
 		log.Error.Println(err.Error())
 		return nil
@@ -122,6 +130,7 @@ func GetTranslate(db botStruct.RequestDb) *string {
 		rows.Scan(&translate)
 		*transaltes += " " + translate
 	}
+	rows.Close()
 	if *transaltes == "" {
 		return nil
 	}

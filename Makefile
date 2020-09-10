@@ -19,6 +19,7 @@ $(INFO_DIR):
 	@mkdir -p info
 
 run:
+	@printf "run\n"
 	@$(BINARY_DIR)$(PROJECT_NAME)
 
 clean:
