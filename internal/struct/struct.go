@@ -4,7 +4,7 @@ import "database/sql"
 
 var (
 	Url   string = "https://api.telegram.org/bot"                   // * url of telegram
-	Token string = "1060785017:AAG7eJUSygisjIF_g97Dj5TKVzS-ct76su8" // * your token of telegram bot
+	Token string = "" // * your token of telegram bot
 )
 
 type RequestDb struct {
@@ -35,7 +35,7 @@ type Master struct {
 	OpenDb   *sql.DB                  // * connect with database
 }
 
-func (m Master) HandeFunc(command string, f func(Request)) {
+func (m Master) HandlerFunc(command string, f func(Request)) {
 	m.Commands[command] = f
 }
 
