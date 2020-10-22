@@ -50,7 +50,7 @@ func CheckUser(master *botStruct.Master, name string, id int) error {
 		Ch.C = make(chan string, 1)
 		Ch.Done = make(chan bool, 1)
 		master.Routines[id] = Ch
-		sends.SetButton(id)
+		// // sends.SetButton(id)
 	}
 	return nil
 }

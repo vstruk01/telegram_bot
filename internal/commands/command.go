@@ -102,7 +102,7 @@ func CommandRepeatKnow(r botStruct.Request) {
 	}
 
 	sends.SendMessage("For exit Enter /end\nTranslate next word", r.Chat_id)
-	
+
 	for {
 		if len(words) <= 0 {
 			sends.SendMessage("Not have words", r.Chat_id)
@@ -114,7 +114,7 @@ func CommandRepeatKnow(r botStruct.Request) {
 		sends.SendMessage(word + "\nEnter Translate", r.Chat_id)
 		answer = strings.TrimSpace(strings.ToLower(<-r.Ch.C))
 		if answer == "/end" {
-			break	
+			break
 		}
 		if strings.Contains(translate, " " + answer + " ") {
 			sends.SendMessage("Well done, continue", r.Chat_id)
@@ -145,7 +145,7 @@ func CommandRepeatNew(r botStruct.Request) {
 	}
 
 	sends.SendMessage("For exit Enter /end\nTranslate next word", r.Chat_id)
-	
+
 	for {
 		if len(words) <= 0 {
 			sends.SendMessage("Not have words", r.Chat_id)
@@ -157,7 +157,7 @@ func CommandRepeatNew(r botStruct.Request) {
 		sends.SendMessage(word + "\nEnter Translate", r.Chat_id)
 		answer = strings.TrimSpace(strings.ToLower(<-r.Ch.C))
 		if answer == "/end" {
-			break	
+			break
 		}
 		if strings.Contains(translate, " " + answer + " ") {
 			sends.SendMessage("Well done, continue", r.Chat_id)

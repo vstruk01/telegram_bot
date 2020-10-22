@@ -3,8 +3,8 @@ package botStruct
 import "database/sql"
 
 var (
-	Url   string = "https://api.telegram.org/bot"                   // * url of telegram
-	Token string = "" // * your token of telegram bot
+	Url   string = "https://api.telegram.org/bot" // * url of telegram
+	Token string = ""                             // * your token of telegram bot
 )
 
 type RequestDb struct {
