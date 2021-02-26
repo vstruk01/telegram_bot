@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -9,39 +10,51 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	"github.com/vstruk01/telegram_bot/internal/commands"
+	_ "github.com/vstruk01/telegram_bot/internal/config"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
 	db "github.com/vstruk01/telegram_bot/internal/workdb"
 )
 
-type Chat struct {
-	Id int
+type RequestDb struct {
+	Name      string
+	Word      string
+	Translate string
+	Chat_id   int
+	Db        *sql.DB
 }
 
-type User struct {
-	Username string `json:"username"`
+type Request struct {
+	Text    string
+	Name    string
+	Chat_id int
+	Ch      *Channels
+	OpenDb  *sql.DB
 }
 
-type Message struct {
-	Chat Chat
-	User User `json:"from"`
-	Text string
+type Channels struct {
+	C    chan string
+	Done chan bool
+}
+type Manager struct {
+	Commands map[string]func(Request) // * list command for telegram bot
+	Routines map[int]*Channels        // * chanells for communication with goroutines
+	Offset   int                      // * counter of request
+	OpenDb   *sql.DB                  // * connect with database
 }
 
-type Update struct {
-	Update_id int     `json:"update_id"`
-	Message   Message `json:"message"`
+func New() Manager {
+	return Manager{}
 }
 
-type RestResponse struct {
-	Ok     bool     `json:"ok"`
-	Result []Update `json:"result"`
+func (m *Manager) HandlerFunc(command string, f func(Request)) {
+	m.Commands[command] = f
 }
 
-func GetUpdate(master *botStruct.Master) {
-	var r botStruct.Request
-	r.OpenDb = master.OpenDb
+func (m *Manager) GetUpdate() {
+	var r Request
+	r.OpenDb = m.OpenDb
 	for {
-		rest, err := GetMessage(&master.Offset)
+		rest, err := Receiver(&m.Offset)
 		if err != nil || len(rest.Result) == 0 {
 			if err != nil {
 				log.Error.Println(err.Error())
@@ -55,18 +68,18 @@ func GetUpdate(master *botStruct.Master) {
 			log.Info.Println("\nName:\t\t", r.Name,
 				"\nChat Id:\t", r.Chat_id,
 				"\nWrote:\t\t", r.Text)
-			if db.CheckUser(master, r.Name, r.Chat_id) != nil {
+			if db.CheckUser(m, r.Name, r.Chat_id) != nil {
 				log.Error.Println(err.Error())
 				continue
 			}
-			r.Ch = master.Routines[r.Chat_id]
+			r.Ch = m.Routines[r.Chat_id]
 			if len(r.Ch.Done) != 0 {
 				if len(r.Ch.C) == 0 {
 					r.Ch.C <- r.Text
 				}
 				continue
 			}
-			function, ok := master.GetCommand(r.Text)
+			function, ok := m.Commands[r.Text]
 			if ok {
 				if len(r.Ch.Done) != 0 {
 					<-r.Ch.Done
@@ -82,7 +95,7 @@ func GetUpdate(master *botStruct.Master) {
 	}
 }
 
-func GetMessage(offset *int) (RestResponse, error) {
+func Receiver(offset *int) (RestResponse, error) {
 	resp, err := http.Get(botStruct.Url + botStruct.Token + "/getUpdates" + "?offset=" + strconv.Itoa(*offset))
 	if log.CheckErr(err) {
 		return RestResponse{}, err

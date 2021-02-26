@@ -1,17 +1,16 @@
 package Init
 
 import (
-	"database/sql"
-
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/vstruk01/telegram_bot/internal/Logger"
 	"github.com/vstruk01/telegram_bot/internal/commands"
+
 	// "github.com/vstruk01/telegram_bot/internal/sends"
-	db "github.com/vstruk01/telegram_bot/internal/workdb"
 	botStruct "github.com/vstruk01/telegram_bot/internal/struct"
+	db "github.com/vstruk01/telegram_bot/internal/workdb"
 )
 
-func InitAll() (*botStruct.Master, error) {
+func (m *Master) InitAll() (*botStruct.Master, error) {
 	log.InitLog()
 
 	master := new(botStruct.Master)
@@ -51,34 +50,10 @@ func InitAll() (*botStruct.Master, error) {
 		return nil, err
 	}
 	for _, v := range *users_id {
-		var ch botStruct.Channels
+		var ch m.Channels
 		ch.C = make(chan string, 1)
 		ch.Done = make(chan bool, 1)
 		master.Routines[v] = &ch
 	}
 	return master, nil
-}
-
-func createDB() (*sql.DB, error) {
-	database, err := sql.Open("sqlite3", "./info/words.db")
-	if log.CheckErr(err) {
-		return nil, err
-	}
-	statement, err := database.Prepare("CREATE TABLE IF NOT EXISTS words (id INTEGER PRIMARY KEY, name TEXT, word TEXT, transcription TEXT, translate TEXT, ok int)")
-	if log.CheckErr(err) {
-		return nil, err
-	}
-	_, err = statement.Exec()
-	if log.CheckErr(err) {
-		return nil, err
-	}
-	statement, err = database.Prepare("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, chat_id INT)")
-	if log.CheckErr(err) {
-		return nil, err
-	}
-	_, err = statement.Exec()
-	if log.CheckErr(err) {
-		return nil, err
-	}
-	return database, nil
 }
