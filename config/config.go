@@ -4,39 +4,35 @@ import (
 	"github.com/spf13/viper"
 )
 
-type Config struct {
-	Token string `mapstructure:"token"`
+type PostgresConfig struct {
+	Host        string `mapstructure:"host"`
+	Port        int    `mapstructure:"port"`
+	Name        string `mapstructure:"name"`
+	User        string `mapstructure:"user"`
+	Password    string `mapstructure:"password"`
+	AppName     string `mapstructure:"app_name"`
+	SourceFiles string `mapstructure:"source_files"`
 }
 
-func GetConfig(name string) *Config {
-	config := new(Config)
+type Config struct {
+	Token string         `mapstructure:"TOKEN"`
+	DB    PostgresConfig `mapstructure:"db"`
+}
 
-	viper.AddConfigPath(".")
-	viper.AddConfigPath("./config/")
-	viper.AddConfigPath("../")
-	viper.AddConfigPath("../../")
-	viper.AddConfigPath("../../config")
-
-	viper.SetConfigFile(name)
-	viper.SetConfigType("json")
-
-	viper.AutomaticEnv()
-	//err := viper.BindEnv("TELEGRAM_TOKEN")
-	//if err != nil {
-	//	return nil
-	//}
-
-	//fmt.Println(viper.Get("TELEGRAM_TOKEN"))
-
-	err := viper.ReadInConfig()
+func LoadConfig(path string) (config Config, err error) {
+	viper.AddConfigPath(path)
+	viper.SetConfigName("app.toml")
+	viper.SetConfigType("toml")
+	err = viper.BindEnv("TOKEN")
 	if err != nil {
-		return nil
+		return Config{}, err
 	}
 
-	err = viper.Unmarshal(config)
+	err = viper.ReadInConfig()
 	if err != nil {
-		return nil
+		return
 	}
 
-	return config
+	err = viper.Unmarshal(&config)
+	return
 }

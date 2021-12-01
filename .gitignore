@@ -1,2 +1,4 @@
 bin
 info
+.idea
+app.toml
