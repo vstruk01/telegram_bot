@@ -1,47 +1,28 @@
 package handler
 
-type Performer interface {
-	Add()
-	Delete()
-	Repeat()
-	Execute(command string) error
-}
-
-type Repository interface {
-	AddPhrase(phrase string, translate string) error
-	AddWord(word, translate string) error
-	DeleteWord(word string) error
-}
+import "telegram_bot/internal/vocabulary"
 
 type Handler struct {
-	Repo Repository
-	CommandMap map[string]func(Performer)
+	repo       vocabulary.Repository
+	commandMap map[string]func(vocabulary.Vocabulary)
 }
 
+func (h *Handler) SetHandler(path string, handler func(vocabulary.Vocabulary)) {
+	h.commandMap[path] = handler
+}
 
-func New(repo Repository, commands map[string]func(Performer)) *Handler {
+func New(repo vocabulary.Repository) *Handler {
+	commands := make(map[string]func(vocabulary.Vocabulary))
+
 	return &Handler{
-		Repo: repo,
-		CommandMap: commands,
+		repo:       repo,
+		commandMap: commands,
 	}
 }
 
-func (h Handler) Add() {
-	panic("implement me")
-}
-
-func (h Handler) Delete() {
-	panic("implement me")
-}
-
-func (h Handler) Repeat() {
-	panic("implement me")
-}
-
-func (h Handler) Execute(command string) error {
-	if fn, ok := h.CommandMap[command]; ok {
-		fn(h)
+func (h *Handler) Execute(command string) error {
+	if handler, ok := h.commandMap[command]; ok {
+		handler(h)
 	}
 	return nil
 }
-
